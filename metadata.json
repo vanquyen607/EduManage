@@ -1,0 +1,6 @@
+{
+  "name": "EduManage - Hệ thống Quản lý Học sinh",
+  "description": "Nền tảng quản lý học sinh toàn diện: hồ sơ, điểm danh, nhận xét tháng, học phí và cổng thông tin cho phụ huynh.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["Quản lý học sinh", "Xuất hóa đơn", "Nhận xét định kỳ", "Thanh toán trực tuyến"]
+}

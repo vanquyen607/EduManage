@@ -1,0 +1,54 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 1. Global Helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isAdmin() {
+      return isSignedIn() && 
+             request.auth.token.email == "vanquyen607@gmail.com" && 
+             request.auth.token.email_verified == true;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // Default Deny
+    match /{document=**} {
+      allow read, write: if isAdmin();
+    }
+
+    // Students
+    match /students/{studentId} {
+      allow read, write: if isAdmin() && isValidId(studentId);
+    }
+
+    // Classes
+    match /classes/{classId} {
+      allow read, write: if isAdmin() && isValidId(classId);
+    }
+
+    // Attendance
+    match /attendance/{recordId} {
+      allow read, write: if isAdmin() && isValidId(recordId);
+    }
+
+    // Comments
+    match /comments/{commentId} {
+      allow read, write: if isAdmin() && isValidId(commentId);
+    }
+
+    // Invoices
+    match /invoices/{invoiceId} {
+      allow read, write: if isAdmin() && isValidId(invoiceId);
+    }
+
+    // Notifications
+    match /notifications/{notifId} {
+      allow read, write: if isAdmin() && isValidId(notifId);
+    }
+  }
+}

@@ -1,0 +1,116 @@
+{
+  "entities": {
+    "Student": {
+      "title": "Student",
+      "description": "Information about a student enrolled in the center",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Full name of the student" },
+        "birthDate": { "type": "string", "format": "date", "description": "Date of birth" },
+        "gender": { "type": "string", "enum": ["male", "female", "other"] },
+        "classId": { "type": "string", "description": "Reference to the class ID" },
+        "parentName": { "type": "string", "description": "Parent or guardian name" },
+        "parentPhone": { "type": "string", "description": "Contact phone number" },
+        "parentEmail": { "type": "string", "description": "Contact email for notifications/invoices" },
+        "status": { "type": "string", "enum": ["active", "inactive"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "classId", "parentPhone", "status"]
+    },
+    "Class": {
+      "title": "Class",
+      "description": "Educational class or subject group",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Name of the class" },
+        "feePerSession": { "type": "number", "description": "Cost per study session" },
+        "description": { "type": "string" },
+        "color": { "type": "string", "description": "Hex color for UI" }
+      },
+      "required": ["name", "feePerSession"]
+    },
+    "Attendance": {
+      "title": "Attendance",
+      "description": "Daily attendance record for a student",
+      "type": "object",
+      "properties": {
+        "studentId": { "type": "string" },
+        "classId": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "status": { "type": "string", "enum": ["present", "absent"] },
+        "month": { "type": "number" },
+        "year": { "type": "number" }
+      },
+      "required": ["studentId", "date", "status"]
+    },
+    "Comment": {
+      "title": "Monthly Comment",
+      "description": "Monthly progress report and comment from teacher",
+      "type": "object",
+      "properties": {
+        "studentId": { "type": "string" },
+        "month": { "type": "number" },
+        "year": { "type": "number" },
+        "content": { "type": "string", "description": "Teacher's feedback" },
+        "rating": { "type": "number", "description": "Rating out of 5" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["studentId", "month", "year", "content"]
+    },
+    "Invoice": {
+      "title": "Invoice",
+      "description": "Monthly tuition invoice for a student",
+      "type": "object",
+      "properties": {
+        "studentId": { "type": "string" },
+        "month": { "type": "number" },
+        "year": { "type": "number" },
+        "sessionCount": { "type": "number", "description": "Number of sessions attended" },
+        "totalAmount": { "type": "number" },
+        "status": { "type": "string", "enum": ["pending", "paid"] },
+        "paidAt": { "type": "string", "format": "date-time" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["studentId", "month", "year", "sessionCount", "totalAmount", "status"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "System notification or event for dashboard",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "timeLabel": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "urgent", "done"] },
+        "type": { "type": "string", "enum": ["clock", "alert", "check"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "timeLabel", "status", "type"]
+    }
+  },
+  "firestore": {
+    "/students/{studentId}": {
+      "schema": "Student",
+      "description": "Collection of students"
+    },
+    "/classes/{classId}": {
+      "schema": "Class",
+      "description": "Collection of classes"
+    },
+    "/attendance/{recordId}": {
+      "schema": "Attendance",
+      "description": "Detailed attendance logs"
+    },
+    "/comments/{commentId}": {
+      "schema": "Comment",
+      "description": "Monthly feedback records"
+    },
+    "/invoices/{invoiceId}": {
+      "schema": "Invoice",
+      "description": "Billing and payment records"
+    },
+    "/notifications/{notifId}": {
+      "schema": "Notification",
+      "description": "Dashboard alerts and events"
+    }
+  }
+}
