@@ -23,7 +23,8 @@ import {
   updateDoc,
   doc
 } from 'firebase/firestore';
-import { db } from '@/src/lib/firebase';
+import { db, auth } from '@/src/lib/firebase';
+import { withOwner, addOwner } from '@/src/lib/firebaseUtils';
 import { studentService } from '@/src/services/studentService';
 import { classService } from '@/src/services/classService';
 import { Student, Class, AttendanceStatus } from '@/src/types';
@@ -66,7 +67,7 @@ export default function AttendanceManager() {
       
       // Fetch existing records for this date and class
       const q = query(
-        collection(db, 'attendance'),
+        withOwner(collection(db, 'attendance')),
         where('classId', '==', selectedClass),
         where('date', '==', selectedDate)
       );
@@ -112,7 +113,7 @@ export default function AttendanceManager() {
         
         // Find existing record to update or create
         const q = query(
-          collection(db, 'attendance'),
+          withOwner(collection(db, 'attendance')),
           where('studentId', '==', student.id),
           where('date', '==', selectedDate)
         );
@@ -129,9 +130,9 @@ export default function AttendanceManager() {
 
         if (!snapshot.empty) {
           const docId = snapshot.docs[0].id;
-          await updateDoc(doc(db, 'attendance', docId), record);
+          await updateDoc(doc(db, 'attendance', docId), addOwner(record));
         } else {
-          await addDoc(collection(db, 'attendance'), record);
+          await addDoc(collection(db, 'attendance'), addOwner(record));
         }
       }
       
@@ -156,8 +157,20 @@ export default function AttendanceManager() {
           <h2 className="text-4xl font-serif font-bold text-slate-900 tracking-tight">Ghi nhận Chuyên cần</h2>
           <p className="text-slate-500 text-sm mt-1">Ghi nhận sự hiện diện để tính học phí thực tế cho học viên.</p>
         </div>
-        <div className="flex items-center gap-3 bg-white p-2 rounded-2xl border border-slate-200 shadow-sm">
-           <div className="flex items-center gap-2 px-3 border-r border-slate-100">
+        <div className="flex flex-wrap items-center gap-3">
+           <button 
+             onClick={() => {
+               const allPresent = classStudents.every(s => (attendanceData[s.id] || AttendanceStatus.PRESENT) === AttendanceStatus.PRESENT);
+               const nextStatus = allPresent ? AttendanceStatus.ABSENT : AttendanceStatus.PRESENT;
+               const nextData = { ...attendanceData };
+               classStudents.forEach(s => nextData[s.id] = nextStatus);
+               setAttendanceData(nextData);
+             }}
+             className="px-6 py-2.5 bg-white border border-slate-200 text-slate-900 rounded-xl text-[10px] font-black tracking-widest uppercase hover:border-slate-900 transition-all active:scale-95 shadow-sm"
+           >
+              CHỌN TẤT CẢ ({classStudents.every(s => (attendanceData[s.id] || AttendanceStatus.PRESENT) === AttendanceStatus.PRESENT) ? 'VẮNG' : 'CÓ MẶT'})
+           </button>
+           <div className="flex items-center gap-2 px-3 py-2 bg-white rounded-xl border border-slate-200">
              <CalendarIcon size={14} className="text-slate-400" />
              <input 
                type="date"
@@ -211,39 +224,39 @@ export default function AttendanceManager() {
               transition={{ delay: idx * 0.05 }}
               onClick={() => handleToggle(student.id)}
               className={cn(
-                "p-6 rounded-3xl border transition-all cursor-pointer flex items-center justify-between group relative overflow-hidden",
+                "p-6 rounded-[2.5rem] border transition-all duration-500 cursor-pointer flex items-center justify-between group relative overflow-hidden",
                 status === AttendanceStatus.PRESENT 
-                  ? "bg-white border-slate-200 hover:border-slate-800 hover:shadow-xl" 
-                  : "bg-red-50 border-red-100 shadow-inner"
+                  ? "bg-white border-slate-100 hover:border-slate-900 hover:shadow-2xl hover:-translate-y-1" 
+                  : "bg-red-50/50 border-red-100 shadow-inner"
               )}
             >
               <div className="flex items-center gap-4">
                 <div className={cn(
-                  "w-12 h-12 rounded-2xl flex items-center justify-center font-serif text-lg font-bold transition-all shadow-md",
-                  status === AttendanceStatus.PRESENT ? "bg-slate-900 text-white" : "bg-red-500 text-white"
+                  "w-14 h-14 rounded-2xl flex items-center justify-center font-serif text-xl font-bold transition-all duration-500 shadow-xl",
+                  status === AttendanceStatus.PRESENT ? "bg-slate-900 text-white group-hover:scale-110" : "bg-red-500 text-white"
                 )}>
                   {student.name.charAt(0)}
                 </div>
                 <div>
-                  <p className={cn("font-bold text-slate-900 transition-colors", status === AttendanceStatus.ABSENT && "text-red-700")}>
+                  <p className={cn("font-bold text-slate-900 text-base transition-colors", status === AttendanceStatus.ABSENT && "text-red-700")}>
                     {student.name}
                   </p>
                   <p className={cn(
-                    "text-[10px] font-black uppercase tracking-widest mt-0.5",
+                    "text-[10px] font-black uppercase tracking-widest mt-1",
                     status === AttendanceStatus.PRESENT ? "text-slate-400" : "text-red-400"
                   )}>
-                    {status === AttendanceStatus.PRESENT ? 'CÓ MẶT' : 'VẮNG MẶT'}
+                    {status === AttendanceStatus.PRESENT ? 'PRESENT' : 'ABSENT'}
                   </p>
                 </div>
               </div>
               
               <div className={cn(
-                "w-10 h-10 rounded-2xl flex items-center justify-center transition-all border",
+                "w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-500 border-2",
                 status === AttendanceStatus.PRESENT 
-                  ? "bg-white border-slate-100 text-slate-200 group-hover:border-emerald-500 group-hover:bg-emerald-500 group-hover:text-white" 
+                  ? "bg-white border-slate-100 text-slate-200 group-hover:border-emerald-500 group-hover:bg-emerald-500 group-hover:text-white group-hover:rotate-12" 
                   : "bg-red-500 border-red-500 text-white shadow-lg shadow-red-200"
               )}>
-                {status === AttendanceStatus.PRESENT ? <Check size={18} /> : <X size={18} />}
+                {status === AttendanceStatus.PRESENT ? <Check size={20} /> : <X size={20} />}
               </div>
             </motion.div>
           );

@@ -1,5 +1,5 @@
 import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { db } from '@/src/lib/firebase';
+import { db, auth } from '@/src/lib/firebase';
 
 export interface BankSettings {
   name: string;
@@ -9,11 +9,13 @@ export interface BankSettings {
 }
 
 const COLLECTION_NAME = 'settings';
-const DOC_ID = 'bank_info';
 
 export const settingsService = {
   async getBankSettings(): Promise<BankSettings> {
-    const docRef = doc(db, COLLECTION_NAME, DOC_ID);
+    const uid = auth.currentUser?.uid;
+    if (!uid) throw new Error('User not authenticated');
+    
+    const docRef = doc(db, COLLECTION_NAME, uid);
     const docSnap = await getDoc(docRef);
     
     if (docSnap.exists()) {
@@ -30,7 +32,10 @@ export const settingsService = {
   },
 
   async saveBankSettings(settings: BankSettings) {
-    const docRef = doc(db, COLLECTION_NAME, DOC_ID);
-    await setDoc(docRef, settings);
+    const uid = auth.currentUser?.uid;
+    if (!uid) throw new Error('User not authenticated');
+    
+    const docRef = doc(db, COLLECTION_NAME, uid);
+    await setDoc(docRef, { ...settings, ownerId: uid });
   }
 };

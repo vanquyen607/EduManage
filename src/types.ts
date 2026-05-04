@@ -27,6 +27,7 @@ export interface Student {
   address?: string;
   notes?: string;
   status: StudentStatus;
+  ownerId: string;
   joinDate?: string;
   createdAt: string;
 }
@@ -35,6 +36,7 @@ export interface ClassSchedule {
   dayOfWeek: number; // 0-6 (CN-T7)
   startTime: string;
   endTime: string;
+  teacher?: string;
 }
 
 export interface Class {
@@ -44,6 +46,7 @@ export interface Class {
   feePerSession: number;
   description: string;
   color: string;
+  ownerId: string;
   schedule?: ClassSchedule[];
 }
 
@@ -55,6 +58,7 @@ export interface Grade {
   score: number;
   weight: number; 
   date: string;
+  ownerId: string;
   note?: string;
 }
 
@@ -64,6 +68,7 @@ export interface Attendance {
   classId: string;
   date: string;
   status: AttendanceStatus;
+  ownerId: string;
   month: number;
   year: number;
 }
@@ -75,6 +80,7 @@ export interface Comment {
   year: number;
   content: string;
   rating: number;
+  ownerId: string;
   createdAt: string;
 }
 
@@ -86,6 +92,7 @@ export interface Invoice {
   sessionCount: number;
   totalAmount: number;
   status: InvoiceStatus;
+  ownerId: string;
   paidAt?: string;
   createdAt: string;
 }
@@ -96,5 +103,6 @@ export interface Notification {
   timeLabel: string;
   status: 'pending' | 'urgent' | 'done';
   type: 'clock' | 'alert' | 'check';
+  ownerId: string;
   createdAt: string;
 }

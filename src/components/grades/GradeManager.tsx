@@ -9,7 +9,7 @@ import {
   TrendingUp,
   FileText
 } from 'lucide-react';
-import { db } from '@/src/lib/firebase';
+import { db, auth } from '@/src/lib/firebase';
 import { 
   collection, 
   addDoc, 
@@ -20,6 +20,7 @@ import {
   where,
   updateDoc 
 } from 'firebase/firestore';
+import { withOwner, addOwner } from '@/src/lib/firebaseUtils';
 import { Student, Class, Grade } from '@/src/types';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/src/lib/utils';
@@ -60,22 +61,25 @@ export default function GradeManager() {
   };
 
   useEffect(() => {
-    const qGrades = query(collection(db, 'grades'));
-    const qStudents = query(collection(db, 'students'));
-    const qClasses = query(collection(db, 'classes'));
+    const uid = auth.currentUser?.uid;
+    if (!uid) return;
+
+    const qGrades = query(collection(db, 'grades'), where('ownerId', '==', uid));
+    const qStudents = query(collection(db, 'students'), where('ownerId', '==', uid));
+    const qClasses = query(collection(db, 'classes'), where('ownerId', '==', uid));
 
     const unsubGrades = onSnapshot(qGrades, (snap) => {
       setGrades(snap.docs.map(d => ({ id: d.id, ...d.data() } as Grade)));
       setLoading(false);
-    });
+    }, (err) => console.error(err));
     
     const unsubStudents = onSnapshot(qStudents, (snap) => {
       setStudents(snap.docs.map(d => ({ id: d.id, ...d.data() } as Student)));
-    });
+    }, (err) => console.error(err));
 
     const unsubClasses = onSnapshot(qClasses, (snap) => {
       setClasses(snap.docs.map(d => ({ id: d.id, ...d.data() } as Class)));
-    });
+    }, (err) => console.error(err));
 
     return () => {
       unsubGrades();
@@ -97,9 +101,9 @@ export default function GradeManager() {
     };
 
     if (editingGrade) {
-      await updateDoc(doc(db, 'grades', editingGrade.id), gradeData);
+      await updateDoc(doc(db, 'grades', editingGrade.id), addOwner(gradeData));
     } else {
-      await addDoc(collection(db, 'grades'), gradeData);
+      await addDoc(collection(db, 'grades'), addOwner(gradeData));
     }
 
     setIsAddModalOpen(false);
@@ -187,7 +191,7 @@ export default function GradeManager() {
                 <input 
                   type="text" 
                   placeholder="Tìm tên học sinh..."
-                  value={searchTerm}
+                  value={searchTerm || ''}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-10 pr-4 py-3 bg-slate-50 rounded-xl text-sm border-none focus:ring-2 focus:ring-slate-900 transition-all outline-none"
                 />
@@ -334,7 +338,7 @@ export default function GradeManager() {
                 type="text" 
                 required
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm"
-                value={newGrade.subject}
+                value={newGrade.subject || ''}
                 onChange={(e) => setNewGrade({ ...newGrade, subject: e.target.value })}
               />
             </div>
@@ -347,7 +351,7 @@ export default function GradeManager() {
                 min="0"
                 max="10"
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-serif font-bold"
-                value={newGrade.score || ''}
+                value={newGrade.score ?? ''}
                 onChange={(e) => setNewGrade({ ...newGrade, score: Number(e.target.value) })}
               />
             </div>
@@ -358,7 +362,7 @@ export default function GradeManager() {
               <label className="text-[11px] font-black uppercase tracking-widest text-slate-400 mb-2 block">Loại điểm</label>
               <select 
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm"
-                value={newGrade.weight}
+                value={newGrade.weight || 1}
                 onChange={(e) => setNewGrade({ ...newGrade, weight: Number(e.target.value) })}
               >
                 <option value={1}>Thường xuyên</option>
@@ -373,7 +377,7 @@ export default function GradeManager() {
                 type="date"
                 required
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm"
-                value={newGrade.date}
+                value={newGrade.date || ''}
                 onChange={(e) => setNewGrade({ ...newGrade, date: e.target.value })}
               />
             </div>

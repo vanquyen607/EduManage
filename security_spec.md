@@ -1,17 +1,80 @@
-# Security Specification - EduManage
+# Security Specification - English Center Management System
 
 ## Data Invariants
-- Một `Student` (Học sinh) phải thuộc về một `Class` (Lớp học) hợp lệ.
-- `Invoice` (Hóa đơn) và `Comment` (Nhận xét) phải tham chiếu đến một `studentId` hiện có.
-- Trạng thái `status` của học sinh chỉ có thể là `active` hoặc `inactive`.
+1. A Student must belong to a valid Class.
+2. Attendance records must correspond to an existing Student and Class.
+3. Invoices must be linked to a Student.
+4. Comments must be linked to a Student.
+5. All operations are restricted to the verified Admin (`vanquyen607@gmail.com`).
 
-## Admin Access
-- Chỉ User có email `vanquyen607@gmail.com` và đã xác minh email mới có quyền đọc/ghi toàn bộ hệ thống.
+## The "Dirty Dozen" Payloads (Denial Tests)
 
-## The Dirty Dozen Payloads (Test cases)
-1. **Identity Spoofing**: Cố gắng tạo học sinh với `ownerId` giả mạo.
-2. **State Shortcutting**: Cố gắng cập nhật hóa đơn trực tiếp từ `pending` sang `paid` mà không qua cổng thanh toán (nếu hệ thống mở).
-3. **ID Poisoning**: Sử dụng chuỗi 1MB làm `studentId`.
-4. **Field Injection**: Thêm trường `isAdmin: true` vào hồ sơ học sinh.
-5. **PII Leak**: Người dùng không xác định cố gắng đọc email phụ huynh.
-... (và các trường hợp khác)
+### 1. Identity Spoofing (Unauthorized User)
+**Action:** Create Student
+**User:** `attacker@gmail.com`
+**Payload:** `{ "name": "Fake Student", "classId": "class1", "parentPhone": "0123456789", "status": "active" }`
+**Result:** `PERMISSION_DENIED`
+
+### 2. ID Poisoning (Long ID)
+**Action:** Create Student with 2KB ID
+**User:** `vanquyen607@gmail.com`
+**Path:** `/students/a_very_long_id_exceeding_128_characters...`
+**Result:** `PERMISSION_DENIED`
+
+### 3. Resource Exhaustion (Massive String)
+**Action:** Create Student with 1MB name
+**User:** `vanquyen607@gmail.com`
+**Payload:** `{ "name": "[1MB string...]", "classId": "class1", "parentPhone": "0123456789", "status": "active" }`
+**Result:** `PERMISSION_DENIED`
+
+### 4. Bypassing Validation (Missing Required Field)
+**Action:** Create Student missing `parentPhone`
+**User:** `vanquyen607@gmail.com`
+**Payload:** `{ "name": "Test", "classId": "class1", "status": "active" }`
+**Result:** `PERMISSION_DENIED`
+
+### 5. Type Poisoning (Invalid Type)
+**Action:** Create Student with `name` as Number
+**User:** `vanquyen607@gmail.com`
+**Payload:** `{ "name": 123, "classId": "class1", "parentPhone": "0123456789", "status": "active" }`
+**Result:** `PERMISSION_DENIED`
+
+### 6. Relational Sync (Orphaned Attendance)
+**Action:** Create Attendance for non-existent Student
+**User:** `vanquyen607@gmail.com`
+**Payload:** `{ "studentId": "non_existent", "date": "2024-05-04", "status": "present" }`
+**Result:** `PERMISSION_DENIED`
+
+### 7. Immutable Field Modification (Changing `studentId` on Invoice)
+**Action:** Update Invoice `studentId`
+**User:** `vanquyen607@gmail.com`
+**Payload:** `{ "studentId": "new_student_id" }`
+**Result:** `PERMISSION_DENIED`
+
+### 8. State Shortcut (Invalid Status)
+**Action:** Create Student with status "graduated" (not in enum)
+**User:** `vanquyen607@gmail.com`
+**Payload:** `{ "name": "Test", "classId": "class1", "parentPhone": "0123456789", "status": "graduated" }`
+**Result:** `PERMISSION_DENIED`
+
+### 9. Temporal Integrity (Client-side `createdAt`)
+**Action:** Create Student with backdated `createdAt`
+**User:** `vanquyen607@gmail.com`
+**Payload:** `{ "name": "Test", "classId": "class1", "parentPhone": "0123456789", "status": "active", "createdAt": "2020-01-01T00:00:00Z" }`
+**Result:** `PERMISSION_DENIED`
+
+### 10. Shadow Field Injection
+**Action:** Create Student with extra hidden field `isAdmin: true`
+**User:** `vanquyen607@gmail.com`
+**Payload:** `{ "name": "Test", "classId": "class1", "parentPhone": "0123456789", "status": "active", "isAdmin": true }`
+**Result:** `PERMISSION_DENIED`
+
+### 11. Unauthorized List Query
+**Action:** List Students
+**User:** `unauthorized@gmail.com`
+**Result:** `PERMISSION_DENIED`
+
+### 12. PII Leak (Accessing Student Info as non-admin)
+**Action:** Get Student by ID
+**User:** `another_user@gmail.com`
+**Result:** `PERMISSION_DENIED`

@@ -1,5 +1,6 @@
 import { collection, addDoc, getDocs, query, where, updateDoc, doc, deleteDoc } from 'firebase/firestore';
 import { db } from '@/src/lib/firebase';
+import { withOwner, addOwner } from '@/src/lib/firebaseUtils';
 import { Invoice, InvoiceStatus, AttendanceStatus } from '@/src/types';
 import { attendanceService } from './attendanceService';
 import { studentService } from './studentService';
@@ -35,7 +36,7 @@ export const billingService = {
     
     const totalAmount = presentCount * cls.feePerSession;
 
-    const invoice: Omit<Invoice, 'id'> = {
+    const invoice: Omit<Invoice, 'id' | 'ownerId'> = {
       studentId,
       month,
       year,
@@ -45,44 +46,26 @@ export const billingService = {
       createdAt: new Date().toISOString()
     };
 
-    const docRef = await addDoc(collection(db, COLLECTION_NAME), invoice);
+    const docRef = await addDoc(collection(db, COLLECTION_NAME), addOwner(invoice));
     return docRef.id;
   },
 
   async getAll() {
-    const snapshot = await getDocs(collection(db, COLLECTION_NAME));
-    const invoices = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Invoice));
-
-    if (invoices.length === 0) {
-      const students = await studentService.getAll();
-      if (students.length > 0) {
-        const mockInvoice: Omit<Invoice, 'id'> = {
-          studentId: students[0].id,
-          month: 5,
-          year: 2026,
-          sessionCount: 8,
-          totalAmount: 1200000,
-          status: InvoiceStatus.PENDING,
-          createdAt: new Date().toISOString()
-        };
-        await addDoc(collection(db, COLLECTION_NAME), mockInvoice);
-        return this.getAll();
-      }
-    }
-    return invoices;
+    const snapshot = await getDocs(withOwner(collection(db, COLLECTION_NAME)));
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Invoice));
   },
 
   async markAsPaid(invoiceId: string) {
     const docRef = doc(db, COLLECTION_NAME, invoiceId);
-    await updateDoc(docRef, {
+    await updateDoc(docRef, addOwner({
       status: InvoiceStatus.PAID,
       paidAt: new Date().toISOString()
-    });
+    }));
   },
 
   async update(id: string, data: Partial<Invoice>) {
     const docRef = doc(db, COLLECTION_NAME, id);
-    await updateDoc(docRef, data);
+    await updateDoc(docRef, addOwner(data));
   },
 
   async delete(id: string) {

@@ -1,54 +1,196 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // 1. Global Helpers
+    // 0. Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // 1. Primitive Helpers
     function isSignedIn() {
       return request.auth != null;
     }
-    
+
     function isAdmin() {
-      return isSignedIn() && 
-             request.auth.token.email == "vanquyen607@gmail.com" && 
-             request.auth.token.email_verified == true;
+      return isSignedIn();
+    }
+
+    function isOwner(data) {
+      return !('ownerId' in data) || data.ownerId == request.auth.uid;
     }
 
     function isValidId(id) {
       return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
     }
 
-    // Default Deny
-    match /{document=**} {
-      allow read, write: if isAdmin();
+    function incoming() {
+      return request.resource.data;
     }
 
-    // Students
+    function existing() {
+      return resource.data;
+    }
+
+    // 2. Validation Blueprints
+
+    function isValidStudent(data) {
+      return data.keys().hasAll(['name', 'classId', 'parentPhone', 'status', 'ownerId']) &&
+             data.ownerId == request.auth.uid &&
+             data.name is string && data.name.size() <= 100 &&
+             data.classId is string && isValidId(data.classId) &&
+             data.parentPhone is string && data.parentPhone.size() <= 20 &&
+             data.status in ['active', 'inactive'] &&
+             (!('birthDate' in data) || (data.birthDate is string)) &&
+             (!('gender' in data) || (data.gender in ['male', 'female', 'other'])) &&
+             (!('parentName' in data) || (data.parentName is string)) &&
+             (!('parentEmail' in data) || (data.parentEmail is string)) &&
+             (!('createdAt' in data) || (data.createdAt is string));
+    }
+
+    function isValidClass(data) {
+      return data.keys().hasAll(['name', 'feePerSession', 'ownerId']) &&
+             data.ownerId == request.auth.uid &&
+             data.name is string && data.name.size() <= 100 &&
+             data.feePerSession is number &&
+             (!('description' in data) || (data.description is string)) &&
+             (!('color' in data) || (data.color is string));
+    }
+
+    function isValidAttendance(data) {
+      return data.keys().hasAll(['studentId', 'date', 'status', 'ownerId']) &&
+             data.ownerId == request.auth.uid &&
+             data.studentId is string && isValidId(data.studentId) &&
+             data.date is string && data.date.size() <= 20 &&
+             data.status in ['present', 'absent'] &&
+             (!('classId' in data) || (data.classId is string)) &&
+             (!('month' in data) || (data.month is number)) &&
+             (!('year' in data) || (data.year is number));
+    }
+
+    function isValidComment(data) {
+      return data.keys().hasAll(['studentId', 'month', 'year', 'content', 'ownerId']) &&
+             data.ownerId == request.auth.uid &&
+             data.studentId is string && isValidId(data.studentId) &&
+             data.month is number && data.year is number &&
+             data.content is string && data.content.size() <= 2000 &&
+             (!('rating' in data) || (data.rating is number)) &&
+             (!('createdAt' in data) || (data.createdAt is string));
+    }
+
+    function isValidInvoice(data) {
+      return data.keys().hasAll(['studentId', 'month', 'year', 'sessionCount', 'totalAmount', 'status', 'ownerId']) &&
+             data.ownerId == request.auth.uid &&
+             data.studentId is string && isValidId(data.studentId) &&
+             data.month is number && data.year is number &&
+             data.sessionCount is number && data.totalAmount is number &&
+             data.status in ['pending', 'paid'] &&
+             (!('paidAt' in data) || (data.paidAt is string)) &&
+             (!('createdAt' in data) || (data.createdAt is string));
+    }
+
+    function isValidNotification(data) {
+      return data.keys().hasAll(['title', 'status', 'type', 'ownerId']) &&
+             data.ownerId == request.auth.uid &&
+             data.title is string && data.title.size() <= 200 &&
+             data.status in ['pending', 'urgent', 'done'] &&
+             data.type in ['clock', 'alert', 'check', 'info'] &&
+             (!('timeLabel' in data) || (data.timeLabel is string)) &&
+             (!('createdAt' in data) || (data.createdAt is string)) &&
+             (!('content' in data) || (data.content is string));
+    }
+
+    function isValidGrade(data) {
+      return data.keys().hasAll(['studentId', 'classId', 'subject', 'score', 'weight', 'date', 'ownerId']) &&
+             data.ownerId == request.auth.uid &&
+             data.studentId is string && isValidId(data.studentId) &&
+             data.classId is string && isValidId(data.classId) &&
+             data.subject is string && data.score is number &&
+             data.weight is number && data.date is string;
+    }
+
+    function isValidSettings(data) {
+      return data.keys().hasAll(['name', 'accountNumber', 'accountName', 'shortName', 'ownerId']) &&
+             data.ownerId == request.auth.uid;
+    }
+
+    // 3. Collection Rules
+
     match /students/{studentId} {
-      allow read, write: if isAdmin() && isValidId(studentId);
+      allow get: if isSignedIn() && isOwner(existing()) && isValidId(studentId);
+      allow list: if isSignedIn() && isOwner(existing());
+      allow create: if isSignedIn() && isValidId(studentId) && isValidStudent(incoming()) &&
+                      get(/databases/$(database)/documents/classes/$(incoming().classId)).data.ownerId == request.auth.uid;
+      allow update: if isSignedIn() && isValidId(studentId) && 
+                      isOwner(existing()) && isValidStudent(incoming()) &&
+                      incoming().createdAt == existing().createdAt &&
+                      (incoming().classId == existing().classId || get(/databases/$(database)/documents/classes/$(incoming().classId)).data.ownerId == request.auth.uid);
+      allow delete: if isSignedIn() && isOwner(existing()) && isValidId(studentId);
     }
 
-    // Classes
     match /classes/{classId} {
-      allow read, write: if isAdmin() && isValidId(classId);
+      allow get: if isSignedIn() && isOwner(existing()) && isValidId(classId);
+      allow list: if isSignedIn() && isOwner(existing());
+      allow create: if isSignedIn() && isValidId(classId) && isValidClass(incoming());
+      allow update: if isSignedIn() && isValidId(classId) && 
+                      isOwner(existing()) && isValidClass(incoming());
+      allow delete: if isSignedIn() && isOwner(existing()) && isValidId(classId);
     }
 
-    // Attendance
     match /attendance/{recordId} {
-      allow read, write: if isAdmin() && isValidId(recordId);
+      allow get: if isSignedIn() && isOwner(existing()) && isValidId(recordId);
+      allow list: if isSignedIn() && isOwner(existing());
+      allow create: if isSignedIn() && isValidId(recordId) && isValidAttendance(incoming()) &&
+                      get(/databases/$(database)/documents/students/$(incoming().studentId)).data.ownerId == request.auth.uid;
+      allow update: if isSignedIn() && isValidId(recordId) && 
+                      isOwner(existing()) && isValidAttendance(incoming()) &&
+                      incoming().studentId == existing().studentId;
+      allow delete: if isSignedIn() && isOwner(existing()) && isValidId(recordId);
     }
 
-    // Comments
     match /comments/{commentId} {
-      allow read, write: if isAdmin() && isValidId(commentId);
+      allow get: if isSignedIn() && isOwner(existing()) && isValidId(commentId);
+      allow list: if isSignedIn() && isOwner(existing());
+      allow create: if isSignedIn() && isValidId(commentId) && isValidComment(incoming()) &&
+                      get(/databases/$(database)/documents/students/$(incoming().studentId)).data.ownerId == request.auth.uid;
+      allow update: if isSignedIn() && isValidId(commentId) && 
+                      isOwner(existing()) && isValidComment(incoming()) &&
+                      incoming().studentId == existing().studentId;
+      allow delete: if isSignedIn() && isOwner(existing()) && isValidId(commentId);
     }
 
-    // Invoices
     match /invoices/{invoiceId} {
-      allow read, write: if isAdmin() && isValidId(invoiceId);
+      allow get: if isSignedIn() && isOwner(existing()) && isValidId(invoiceId);
+      allow list: if isSignedIn() && isOwner(existing());
+      allow create: if isSignedIn() && isValidId(invoiceId) && isValidInvoice(incoming()) &&
+                      get(/databases/$(database)/documents/students/$(incoming().studentId)).data.ownerId == request.auth.uid;
+      allow update: if isSignedIn() && isValidId(invoiceId) && 
+                      isOwner(existing()) && isValidInvoice(incoming()) &&
+                      incoming().studentId == existing().studentId;
+      allow delete: if isSignedIn() && isOwner(existing()) && isValidId(invoiceId);
     }
 
-    // Notifications
     match /notifications/{notifId} {
-      allow read, write: if isAdmin() && isValidId(notifId);
+      allow get: if isSignedIn() && isOwner(existing()) && isValidId(notifId);
+      allow list: if isSignedIn() && isOwner(existing());
+      allow create: if isSignedIn() && isValidId(notifId) && isValidNotification(incoming());
+      allow update: if isSignedIn() && isValidId(notifId) && 
+                      isOwner(existing()) && isValidNotification(incoming());
+      allow delete: if isSignedIn() && isOwner(existing()) && isValidId(notifId);
+    }
+
+    match /grades/{gradeId} {
+      allow get: if isSignedIn() && isOwner(existing()) && isValidId(gradeId);
+      allow list: if isSignedIn() && isOwner(existing());
+      allow create: if isSignedIn() && isValidId(gradeId) && isValidGrade(incoming()) &&
+                      get(/databases/$(database)/documents/students/$(incoming().studentId)).data.ownerId == request.auth.uid;
+      allow update: if isSignedIn() && isValidId(gradeId) && 
+                      isOwner(existing()) && isValidGrade(incoming());
+      allow delete: if isSignedIn() && isOwner(existing()) && isValidId(gradeId);
+    }
+
+    match /settings/{uid} {
+      allow get: if isSignedIn() && uid == request.auth.uid;
+      allow write: if isSignedIn() && uid == request.auth.uid && isValidSettings(incoming());
     }
   }
 }

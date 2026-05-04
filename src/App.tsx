@@ -23,6 +23,16 @@ export default function App() {
   const [loading, setLoading] = useState(true);
 
   React.useEffect(() => {
+    const handleChangeTab = (e: any) => {
+      setActiveTab(e.detail);
+    };
+    window.addEventListener('changeTab', handleChangeTab);
+    return () => {
+      window.removeEventListener('changeTab', handleChangeTab);
+    };
+  }, []);
+
+  React.useEffect(() => {
     return onAuthStateChanged(auth, (u) => {
       setUser(u);
       setLoading(false);

@@ -7,6 +7,7 @@ import {
   Calendar as CalendarIcon,
   CheckCircle2,
   Clock,
+  Star,
   AlertCircle,
   PlusCircle,
   MoreVertical,
@@ -183,61 +184,104 @@ export default function DashboardOverview() {
   const [activeChart, setActiveChart] = useState<'month' | 'class'>('month');
 
   const statCards = [
-    { label: 'TỔNG HỌC SINH', value: stats.totalStudents, icon: Users, color: 'bg-slate-900', trend: '+12%' },
-    { label: 'LỚP ĐÀO TẠO', value: stats.activeClasses, icon: GraduationCap, color: 'bg-slate-900', trend: 'ỔN ĐỊNH' },
-    { label: 'HÓA ĐƠN CHỜ', value: stats.pendingInvoices, icon: AlertCircle, color: 'bg-red-500', trend: stats.pendingInvoices > 0 ? 'CẦN XỬ LÝ' : 'XONG' },
-    { label: 'DOANH THU TỔNG', value: formatCurrency(totalRevenue), icon: DollarSign, color: 'bg-accent', trend: '+18.4%' },
+    { label: 'TỔNG HỌC SINH', value: stats.totalStudents, icon: Users, color: 'bg-slate-900', trend: '+12%', sub: 'Học viên active' },
+    { label: 'LỚP ĐÀO TẠO', value: stats.activeClasses, icon: GraduationCap, color: 'bg-slate-900', trend: 'ỔN ĐỊNH', sub: 'Chương trình chạy' },
+    { label: 'HÓA ĐƠN CHỜ', value: stats.pendingInvoices, icon: AlertCircle, color: 'bg-red-500', trend: stats.pendingInvoices > 0 ? 'CẦN XỬ LÝ' : 'XONG', sub: 'Chưa thu tiền' },
+    { label: 'DOANH THU TỔNG', value: formatCurrency(totalRevenue), icon: DollarSign, color: 'bg-accent', trend: '+18.4%', sub: 'Dòng tiền hệ thống' },
   ];
 
   const pendingInvoicesList = invoices.filter(i => i.status === InvoiceStatus.PENDING).slice(0, 3);
   const recentStudents = students.slice(0, 3);
 
+  const quickActions = [
+    { label: 'ĐIỂM DANH', icon: CalendarIcon, action: () => { window.dispatchEvent(new CustomEvent('changeTab', { detail: 'attendance' })); }, color: 'bg-blue-50 text-blue-600' },
+    { label: 'THU HỌC PHÍ', icon: DollarSign, action: () => { window.dispatchEvent(new CustomEvent('changeTab', { detail: 'billing' })); }, color: 'bg-emerald-50 text-emerald-600' },
+    { label: 'NHẬP ĐIỂM', icon: Star, action: () => { window.dispatchEvent(new CustomEvent('changeTab', { detail: 'grades' })); }, color: 'bg-amber-50 text-amber-600' },
+    { label: 'LỊCH HỌC', icon: Clock, action: () => { window.dispatchEvent(new CustomEvent('changeTab', { detail: 'schedule' })); }, color: 'bg-purple-50 text-purple-600' },
+  ];
+
   return (
-    <div className="space-y-10 pb-10">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-slate-200 pb-8">
+    <div className="space-y-12 pb-10">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-slate-200 pb-10">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-             <div className="h-px w-8 bg-accent" />
-             <p className="text-[10px] font-black tracking-[0.2em] text-accent uppercase">Bảng điều khiển</p>
+          <div className="flex items-center gap-2 mb-2">
+             <div className="h-0.5 w-6 bg-accent" />
+             <p className="text-[10px] font-black tracking-[0.3em] text-accent uppercase">Mission Control</p>
           </div>
-          <h2 className="text-4xl font-serif font-bold text-slate-900 tracking-tight">Chào mừng quay lại, Admin</h2>
-          <p className="text-slate-500 text-sm mt-1">Dưới đây là tóm tắt tình hình học tập và tài chính hôm nay.</p>
+          <h2 className="text-4xl md:text-5xl font-serif font-bold text-slate-900 tracking-tight leading-none italic">
+            Dashboard <span className="text-slate-300 font-light not-italic">Overview</span>
+          </h2>
+          <p className="text-slate-400 text-sm mt-3 font-medium">Xin chào, Quản trị viên. Hệ thống đang vận hành tốt.</p>
         </div>
         <div className="flex items-center gap-3">
+           <div className="flex -space-x-3 mr-4">
+              {recentStudents.map((s, i) => (
+                <div key={i} className="w-10 h-10 rounded-2xl border-4 border-white bg-slate-900 text-white flex items-center justify-center text-xs font-bold shadow-lg">
+                  {s.name.charAt(0)}
+                </div>
+              ))}
+              <div className="w-10 h-10 rounded-2xl border-4 border-white bg-slate-100 flex items-center justify-center text-[10px] font-black text-slate-400 shadow-lg">
+                +{stats.totalStudents}
+              </div>
+           </div>
            <button 
              onClick={() => { setSelectedNotif(undefined); setIsNotifModalOpen(true); }}
-             className="flex items-center gap-2 px-6 py-3 bg-slate-900 text-white rounded-xl text-xs font-black tracking-widest uppercase hover:bg-slate-800 transition-all shadow-lg shadow-slate-200 active:scale-95"
+             className="px-8 py-4 bg-slate-900 text-white rounded-2xl text-[10px] font-black tracking-[0.2em] uppercase hover:bg-accent hover:shadow-[0_20px_40px_rgba(194,65,12,0.2)] hover:-translate-y-1 transition-all shadow-xl shadow-slate-200 active:scale-95"
            >
-             <PlusCircle size={16} />
-             Thêm thông báo
+             POST ANNOUNCEMENT
            </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+      {/* Quick Actions Grid */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {quickActions.map((action, i) => (
+          <motion.button
+            key={i}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 * i }}
+            onClick={action.action}
+            className={cn(
+              "flex items-center gap-4 p-4 rounded-3xl border border-slate-100 transition-all hover:border-slate-900 hover:shadow-xl group",
+              action.color
+            )}
+          >
+            <div className="p-3 rounded-2xl bg-white shadow-sm group-hover:scale-110 transition-transform">
+              <action.icon size={20} />
+            </div>
+            <span className="text-[10px] font-black tracking-widest text-slate-900">{action.label}</span>
+          </motion.button>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
         {statCards.map((stat, i) => (
           <motion.div 
             key={i}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.1, duration: 0.5 }}
-            className="bg-white p-4 md:p-6 rounded-2xl md:rounded-3xl border border-slate-200 shadow-sm group hover:shadow-md transition-all duration-300 relative overflow-hidden"
+            transition={{ delay: i * 0.05, duration: 0.6, ease: [0.23, 1, 0.32, 1] }}
+            className="group bg-card-bg p-6 md:p-8 rounded-[2rem] border border-border-main shadow-sm hover:shadow-[0_20px_50px_rgba(0,0,0,0.05)] hover:-translate-y-1 transition-all duration-500 relative overflow-hidden"
           >
-            <div className={cn("absolute -top-4 -right-4 w-16 h-16 md:w-24 md:h-24 transform opacity-5 rounded-full blur-xl", stat.color)} />
-            <div className="flex items-start justify-between mb-4 md:mb-6">
-              <div className={cn("p-2.5 md:p-4 rounded-xl md:rounded-2xl text-white shadow-lg", stat.color)}>
-                <stat.icon size={18} className="md:w-[22px] md:h-[22px]" />
+            <div className={cn("absolute -top-12 -right-12 w-32 h-32 transform opacity-5 group-hover:opacity-10 group-hover:scale-110 transition-all duration-700 rounded-full blur-2xl", stat.color)} />
+            <div className="flex items-start justify-between mb-8">
+              <div className={cn("p-4 rounded-2xl text-white shadow-lg shadow-slate-100 group-hover:scale-110 transition-transform duration-500", stat.color)}>
+                <stat.icon size={22} />
               </div>
             </div>
             <div>
-              <p className="text-slate-400 text-[8px] md:text-[10px] font-black uppercase tracking-widest mb-1">{stat.label}</p>
-              <p className="text-lg md:text-3xl font-serif font-bold text-slate-900 leading-tight truncate">{stat.value}</p>
-              <span className={cn(
-                "text-[8px] md:text-[10px] font-black px-1.5 md:px-2 py-0.5 md:py-1 rounded-full uppercase tracking-tighter mt-2 inline-block",
-                stat.trend.startsWith('+') ? "bg-emerald-50 text-emerald-600" : "bg-slate-50 text-slate-600"
-              )}>
-                {stat.trend}
-              </span>
+              <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-2 transition-colors group-hover:text-slate-500">{stat.label}</p>
+              <p className="text-xl md:text-3xl font-serif font-bold text-slate-900 leading-none truncate">{stat.value}</p>
+              <div className="flex items-center gap-2 mt-4">
+                <span className={cn(
+                  "text-[10px] font-black px-2 py-1 rounded-lg uppercase tracking-tighter",
+                  stat.trend.startsWith('+') ? "bg-emerald-50 text-emerald-600" : "bg-slate-50 text-slate-600"
+                )}>
+                  {stat.trend}
+                </span>
+                <span className="text-[9px] font-bold text-slate-300 uppercase tracking-widest group-hover:text-slate-400 transition-colors">vs tháng trước</span>
+              </div>
             </div>
           </motion.div>
         ))}
@@ -248,7 +292,7 @@ export default function DashboardOverview() {
           <motion.div 
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-white p-8 rounded-[2rem] border border-slate-200 shadow-sm"
+            className="bg-card-bg p-8 rounded-[2rem] border border-border-main shadow-sm"
           >
             <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
               <div>

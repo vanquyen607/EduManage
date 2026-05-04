@@ -9,18 +9,20 @@ import {
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
-import { db } from '@/src/lib/firebase';
+import { db, auth } from '@/src/lib/firebase';
 import { 
   collection, 
   onSnapshot, 
   query, 
   updateDoc, 
-  doc 
+  doc,
+  where
 } from 'firebase/firestore';
 import { Class, ClassSchedule } from '@/src/types';
 import { motion } from 'motion/react';
 import { cn } from '@/src/lib/utils';
 import Modal from '@/src/components/ui/Modal';
+import { withOwner, addOwner } from '@/src/lib/firebaseUtils';
 
 const DAYS = ['Chủ nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
 
@@ -33,20 +35,24 @@ export default function ScheduleManager() {
   const [newSchedule, setNewSchedule] = useState<ClassSchedule>({
     dayOfWeek: 1,
     startTime: '08:00',
-    endTime: '10:00'
+    endTime: '10:00',
+    teacher: ''
   });
 
   useEffect(() => {
-    const q = query(collection(db, 'classes'));
+    const uid = auth.currentUser?.uid;
+    if (!uid) return;
+
+    const q = query(collection(db, 'classes'), where('ownerId', '==', uid));
     return onSnapshot(q, (snap) => {
       setClasses(snap.docs.map(d => ({ id: d.id, ...d.data() } as Class)));
-    });
+    }, (err) => console.error(err));
   }, []);
 
   const handleUpdateSchedule = async (classId: string, updatedSchedule: ClassSchedule[]) => {
-    await updateDoc(doc(db, 'classes', classId), {
+    await updateDoc(doc(db, 'classes', classId), addOwner({
       schedule: updatedSchedule
-    });
+    }));
     setIsAddModalOpen(false);
   };
 
@@ -111,7 +117,7 @@ export default function ScheduleManager() {
              </div>
              
              <div className="space-y-3">
-                {classes.flatMap(cls => (cls.schedule || []).map((s, sIdx) => s.dayOfWeek === dayIdx ? ({ ...s, className: cls.name, classId: cls.id, classColor: cls.color, teacher: cls.teacher, id: `${cls.id}-${sIdx}`, sIdx }) : null)).filter(Boolean).sort((a: any, b: any) => a.startTime.localeCompare(b.startTime)).map((session: any) => (
+                {classes.flatMap(cls => (cls.schedule || []).map((s, sIdx) => s.dayOfWeek === dayIdx ? ({ ...s, className: cls.name, classId: cls.id, classColor: cls.color, teacher: s.teacher || cls.teacher, id: `${cls.id}-${sIdx}`, sIdx }) : null)).filter(Boolean).sort((a: any, b: any) => a.startTime.localeCompare(b.startTime)).map((session: any) => (
                   <motion.div 
                     layoutId={session.id}
                     key={session.id}
@@ -147,7 +153,7 @@ export default function ScheduleManager() {
       {/* List view for smaller screens */}
       <div className="lg:hidden space-y-6">
         {DAYS.map((day, dayIdx) => {
-          const sessions = classes.flatMap(cls => (cls.schedule || []).map((s, sIdx) => s.dayOfWeek === dayIdx ? ({ ...s, className: cls.name, classColor: cls.color, teacher: cls.teacher }) : null)).filter(Boolean);
+          const sessions = classes.flatMap(cls => (cls.schedule || []).map((s, sIdx) => s.dayOfWeek === dayIdx ? ({ ...s, className: cls.name, classColor: cls.color, teacher: s.teacher || cls.teacher }) : null)).filter(Boolean);
           if (sessions.length === 0) return null;
           return (
             <div key={day} className="space-y-3">
@@ -265,8 +271,14 @@ export default function ScheduleManager() {
                   </select>
                </div>
                <div>
-                  <label className="text-[11px] font-black uppercase tracking-widest text-slate-400 mb-2 block">Phòng học (Tùy chọn)</label>
-                  <input type="text" placeholder="P.101" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm" />
+                  <label className="text-[11px] font-black uppercase tracking-widest text-slate-400 mb-2 block">Giáo viên (Tùy chọn)</label>
+                  <input 
+                    type="text" 
+                    placeholder="Tên giáo viên..." 
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm"
+                    value={newSchedule.teacher || ''}
+                    onChange={(e) => setNewSchedule({ ...newSchedule, teacher: e.target.value })}
+                  />
                </div>
             </div>
 

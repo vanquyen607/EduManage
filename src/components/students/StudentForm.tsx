@@ -59,7 +59,7 @@ export default function StudentForm({ classes, onSuccess, onCancel, initialData 
               required
               type="text"
               className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-sm"
-              value={formData.name}
+              value={formData.name || ''}
               onChange={e => setFormData({ ...formData, name: e.target.value })}
               placeholder="Nguyễn Văn A"
             />
@@ -69,7 +69,7 @@ export default function StudentForm({ classes, onSuccess, onCancel, initialData 
             <input 
               type="email"
               className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-sm"
-              value={formData.email}
+              value={formData.email || ''}
               onChange={e => setFormData({ ...formData, email: e.target.value })}
               placeholder="hocsinh@example.com"
             />
@@ -83,7 +83,7 @@ export default function StudentForm({ classes, onSuccess, onCancel, initialData 
               required
               type="date"
               className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-sm"
-              value={formData.birthDate}
+              value={formData.birthDate || ''}
               onChange={e => setFormData({ ...formData, birthDate: e.target.value })}
             />
           </div>
@@ -91,7 +91,7 @@ export default function StudentForm({ classes, onSuccess, onCancel, initialData 
             <label className="block text-xs font-bold text-slate-500 uppercase mb-1 tracking-wider">Giới tính</label>
             <select 
               className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-sm"
-              value={formData.gender}
+              value={formData.gender || 'male'}
               onChange={e => setFormData({ ...formData, gender: e.target.value as any })}
             >
               <option value="male">Nam</option>
@@ -106,7 +106,7 @@ export default function StudentForm({ classes, onSuccess, onCancel, initialData 
           <select 
             required
             className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-sm"
-            value={formData.classId}
+            value={formData.classId || ''}
             onChange={e => setFormData({ ...formData, classId: e.target.value })}
           >
             <option value="">Chọn lớp học</option>
@@ -151,7 +151,7 @@ export default function StudentForm({ classes, onSuccess, onCancel, initialData 
                   required
                   type="text"
                   className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-sm"
-                  value={formData.parentName}
+                  value={formData.parentName || ''}
                   onChange={e => setFormData({ ...formData, parentName: e.target.value })}
                 />
               </div>
@@ -162,7 +162,7 @@ export default function StudentForm({ classes, onSuccess, onCancel, initialData 
                     required
                     type="tel"
                     className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-sm"
-                    value={formData.parentPhone}
+                    value={formData.parentPhone || ''}
                     onChange={e => setFormData({ ...formData, parentPhone: e.target.value })}
                   />
                 </div>
@@ -171,7 +171,7 @@ export default function StudentForm({ classes, onSuccess, onCancel, initialData 
                   <input 
                     type="email"
                     className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-sm"
-                    value={formData.parentEmail}
+                    value={formData.parentEmail || ''}
                     onChange={e => setFormData({ ...formData, parentEmail: e.target.value })}
                   />
                 </div>

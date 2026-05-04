@@ -44,7 +44,7 @@ export default function ClassForm({ onSuccess, onCancel, initialData }: ClassFor
           required
           type="text"
           className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/20 outline-none text-sm"
-          value={formData.name}
+          value={formData.name || ''}
           onChange={e => setFormData({ ...formData, name: e.target.value })}
           placeholder="Ví dụ: Lớp Toán Nâng Cao"
         />
@@ -56,7 +56,7 @@ export default function ClassForm({ onSuccess, onCancel, initialData }: ClassFor
           required
           type="number"
           className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/20 outline-none text-sm"
-          value={formData.feePerSession}
+          value={formData.feePerSession ?? 0}
           onChange={e => setFormData({ ...formData, feePerSession: Number(e.target.value) })}
         />
       </div>
@@ -66,7 +66,7 @@ export default function ClassForm({ onSuccess, onCancel, initialData }: ClassFor
         <input 
           type="color"
           className="w-full h-10 p-1 bg-slate-50 border border-slate-200 rounded-xl outline-none"
-          value={formData.color}
+          value={formData.color || '#3b82f6'}
           onChange={e => setFormData({ ...formData, color: e.target.value })}
         />
       </div>
@@ -76,7 +76,7 @@ export default function ClassForm({ onSuccess, onCancel, initialData }: ClassFor
         <textarea 
           rows={3}
           className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/20 outline-none text-sm"
-          value={formData.description}
+          value={formData.description || ''}
           onChange={e => setFormData({ ...formData, description: e.target.value })}
         />
       </div>

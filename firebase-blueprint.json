@@ -13,9 +13,10 @@
         "parentPhone": { "type": "string", "description": "Contact phone number" },
         "parentEmail": { "type": "string", "description": "Contact email for notifications/invoices" },
         "status": { "type": "string", "enum": ["active", "inactive"] },
+        "ownerId": { "type": "string", "description": "UID of the teacher who owns this record" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["name", "classId", "parentPhone", "status"]
+      "required": ["name", "classId", "parentPhone", "status", "ownerId"]
     },
     "Class": {
       "title": "Class",
@@ -23,11 +24,25 @@
       "type": "object",
       "properties": {
         "name": { "type": "string", "description": "Name of the class" },
+        "teacher": { "type": "string" },
         "feePerSession": { "type": "number", "description": "Cost per study session" },
         "description": { "type": "string" },
-        "color": { "type": "string", "description": "Hex color for UI" }
+        "color": { "type": "string", "description": "Hex color for UI" },
+        "schedule": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "dayOfWeek": { "type": "number" },
+              "startTime": { "type": "string" },
+              "endTime": { "type": "string" },
+              "teacher": { "type": "string" }
+            }
+          }
+        },
+        "ownerId": { "type": "string" }
       },
-      "required": ["name", "feePerSession"]
+      "required": ["name", "feePerSession", "ownerId"]
     },
     "Attendance": {
       "title": "Attendance",
@@ -39,9 +54,10 @@
         "date": { "type": "string", "format": "date" },
         "status": { "type": "string", "enum": ["present", "absent"] },
         "month": { "type": "number" },
-        "year": { "type": "number" }
+        "year": { "type": "number" },
+        "ownerId": { "type": "string" }
       },
-      "required": ["studentId", "date", "status"]
+      "required": ["studentId", "date", "status", "ownerId"]
     },
     "Comment": {
       "title": "Monthly Comment",
@@ -53,9 +69,10 @@
         "year": { "type": "number" },
         "content": { "type": "string", "description": "Teacher's feedback" },
         "rating": { "type": "number", "description": "Rating out of 5" },
+        "ownerId": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["studentId", "month", "year", "content"]
+      "required": ["studentId", "month", "year", "content", "ownerId"]
     },
     "Invoice": {
       "title": "Invoice",
@@ -68,10 +85,11 @@
         "sessionCount": { "type": "number", "description": "Number of sessions attended" },
         "totalAmount": { "type": "number" },
         "status": { "type": "string", "enum": ["pending", "paid"] },
+        "ownerId": { "type": "string" },
         "paidAt": { "type": "string", "format": "date-time" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["studentId", "month", "year", "sessionCount", "totalAmount", "status"]
+      "required": ["studentId", "month", "year", "sessionCount", "totalAmount", "status", "ownerId"]
     },
     "Notification": {
       "title": "Notification",
@@ -82,9 +100,10 @@
         "timeLabel": { "type": "string" },
         "status": { "type": "string", "enum": ["pending", "urgent", "done"] },
         "type": { "type": "string", "enum": ["clock", "alert", "check"] },
+        "ownerId": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["title", "timeLabel", "status", "type"]
+      "required": ["title", "timeLabel", "status", "type", "ownerId"]
     }
   },
   "firestore": {
