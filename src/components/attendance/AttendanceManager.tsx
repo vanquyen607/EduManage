@@ -30,8 +30,10 @@ import { classService } from '@/src/services/classService';
 import { Student, Class, AttendanceStatus } from '@/src/types';
 import { cn } from '@/src/lib/utils';
 import { format } from 'date-fns';
+import { useToast } from '@/src/lib/toast';
 
 export default function AttendanceManager() {
+  const { toast } = useToast();
   const [students, setStudents] = useState<Student[]>([]);
   const [classes, setClasses] = useState<Class[]>([]);
   const [selectedClass, setSelectedClass] = useState<string>('');
@@ -136,9 +138,9 @@ export default function AttendanceManager() {
         }
       }
       
-      console.log('Attendance saved successfully');
+      toast('Đã lưu điểm danh thành công!', 'success');
     } catch (err) {
-      console.error("Error saving attendance:", err);
+      toast('Có lỗi khi lưu điểm danh!', 'error');
     } finally {
       setIsSaving(false);
     }

@@ -16,6 +16,11 @@ import {
   QrCode,
   Copy
 } from 'lucide-react';
+import { useToast } from '@/src/lib/toast';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { notificationSchema } from '@/src/lib/validation';
+import { StatCardSkeleton } from '@/src/components/ui/Skeleton';
 import { 
   BarChart, 
   Bar, 
@@ -48,6 +53,8 @@ const data = [
 ];
 
 export default function DashboardOverview() {
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(true);
   const [stats, setStats] = useState({
     totalStudents: 0,
     activeClasses: 0,
@@ -105,15 +112,18 @@ export default function DashboardOverview() {
       });
     } catch (err) {
       console.error(err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleProcessInvoice = async (invoiceId: string) => {
     try {
       await billingService.markAsPaid(invoiceId);
+      toast('Xác nhận thu học phí thành công!', 'success');
       await fetchAllData();
     } catch (err) {
-      console.error(err);
+      toast('Có lỗi khi xử lý hóa đơn!', 'error');
     }
   };
 
@@ -256,7 +266,16 @@ export default function DashboardOverview() {
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
-        {statCards.map((stat, i) => (
+        {isLoading ? (
+          Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="bg-white p-6 md:p-8 rounded-[2rem] border border-slate-200 animate-pulse">
+              <div className="w-14 h-14 bg-slate-100 rounded-2xl mb-8" />
+              <div className="h-3 bg-slate-100 rounded w-1/2 mb-3" />
+              <div className="h-8 bg-slate-100 rounded w-3/4 mb-3" />
+              <div className="h-5 bg-slate-50 rounded w-16" />
+            </div>
+          ))
+        ) : statCards.map((stat, i) => (
           <motion.div 
             key={i}
             initial={{ opacity: 0, y: 20 }}
@@ -631,57 +650,55 @@ export default function DashboardOverview() {
 }
 
 function NotificationForm({ initialData, onSuccess, onCancel }: { initialData?: Notification, onSuccess: () => void, onCancel: () => void }) {
-  const [formData, setFormData] = useState<Partial<Notification>>(initialData || {
-    title: '',
-    timeLabel: '',
-    status: 'pending',
-    type: 'clock'
+  const { toast } = useToast();
+  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm({
+    resolver: zodResolver(notificationSchema),
+    defaultValues: initialData ? {
+      title: initialData.title,
+      timeLabel: initialData.timeLabel,
+      status: initialData.status,
+      type: initialData.type,
+    } : {
+      title: '',
+      timeLabel: '',
+      status: 'pending',
+      type: 'clock'
+    }
   });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const onSubmit = async (data: any) => {
     try {
       if (initialData?.id) {
-         await notificationService.update(initialData.id, formData);
+         await notificationService.update(initialData.id, data);
+         toast('Cập nhật thông báo thành công!', 'success');
       } else {
-         await notificationService.add(formData as Omit<Notification, 'id' | 'createdAt'>);
+         await notificationService.add(data);
+         toast('Thêm thông báo thành công!', 'success');
       }
       onSuccess();
     } catch (err) {
-      console.error('Error saving notification:', err);
+      toast('Có lỗi khi lưu thông báo!', 'error');
     }
   };
 
+  const inputClass = "w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/20 outline-none text-sm";
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 font-sans text-sm">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 font-sans text-sm">
        <div>
          <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Nội dung</label>
-         <input 
-           required
-           className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/20 outline-none"
-           value={formData.title}
-           onChange={e => setFormData({ ...formData, title: e.target.value })}
-           placeholder="Ví dụ: Chốt điểm danh lớp Piano"
-         />
+         <input {...register('title')} className={inputClass} placeholder="Ví dụ: Chốt điểm danh lớp Piano" />
+         {errors.title && <p className="text-[10px] text-red-500 mt-1">{errors.title.message as string}</p>}
        </div>
        <div>
          <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Thời điểm hiển thị</label>
-         <input 
-           required
-           className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/20 outline-none"
-           value={formData.timeLabel}
-           onChange={e => setFormData({ ...formData, timeLabel: e.target.value })}
-           placeholder="Ví dụ: 10:00 AM hoặc Hôm nay"
-         />
+         <input {...register('timeLabel')} className={inputClass} placeholder="Ví dụ: 10:00 AM hoặc Hôm nay" />
+         {errors.timeLabel && <p className="text-[10px] text-red-500 mt-1">{errors.timeLabel.message as string}</p>}
        </div>
        <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Mức độ</label>
-            <select 
-               className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none cursor-pointer"
-               value={formData.status}
-               onChange={e => setFormData({ ...formData, status: e.target.value as any })}
-            >
+            <select {...register('status')} className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none cursor-pointer">
               <option value="pending">Bình thường</option>
               <option value="urgent">Khẩn cấp</option>
               <option value="done">Hoàn thành</option>
@@ -689,11 +706,7 @@ function NotificationForm({ initialData, onSuccess, onCancel }: { initialData?: 
           </div>
           <div>
             <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Biểu tượng</label>
-            <select 
-               className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none cursor-pointer"
-               value={formData.type}
-               onChange={e => setFormData({ ...formData, type: e.target.value as any })}
-            >
+            <select {...register('type')} className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none cursor-pointer">
               <option value="clock">Thời gian</option>
               <option value="alert">Cảnh báo</option>
               <option value="check">Thành công</option>
@@ -702,7 +715,7 @@ function NotificationForm({ initialData, onSuccess, onCancel }: { initialData?: 
        </div>
        <div className="flex gap-3 justify-end pt-4">
           <button type="button" onClick={onCancel} className="px-4 py-2 text-slate-500 font-bold hover:bg-slate-50 rounded-lg">Hủy</button>
-          <button type="submit" className="bg-primary text-white px-6 py-2 rounded-xl font-bold shadow-md hover:bg-primary/90 transition-all">Lưu</button>
+          <button type="submit" disabled={isSubmitting} className="bg-primary text-white px-6 py-2 rounded-xl font-bold shadow-md hover:bg-primary/90 transition-all">Lưu</button>
        </div>
     </form>
   );

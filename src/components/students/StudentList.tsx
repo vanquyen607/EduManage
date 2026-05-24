@@ -22,8 +22,12 @@ import StudentForm from './StudentForm';
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { addVietnameseFont } from '@/src/lib/pdfFonts';
+import Pagination, { usePagination } from '@/src/components/ui/Pagination';
+import { exportToExcel } from '@/src/lib/exportUtils';
+import { useToast } from '@/src/lib/toast';
 
 export default function StudentList() {
+  const { toast } = useToast();
   const [students, setStudents] = useState<Student[]>([]);
   const [classes, setClasses] = useState<Class[]>([]);
   const [comments, setComments] = useState<Comment[]>([]);
@@ -75,11 +79,13 @@ export default function StudentList() {
   };
 
   const handleDelete = async (id: string) => {
+    if (!window.confirm('Bạn có chắc chắn muốn xóa học sinh này?')) return;
     try {
       await studentService.delete(id);
+      toast('Đã xóa học sinh!', 'success');
       fetchData();
     } catch (err) {
-      console.error(err);
+      toast('Có lỗi khi xóa học sinh!', 'error');
     }
   };
 
@@ -103,8 +109,8 @@ export default function StudentList() {
   };
 
   const exportPDF = async () => {
-    const doc = new jsPDF() as any;
-    const fontName = await addVietnameseFont(doc);
+    const doc = new jsPDF();
+    const fontName = addVietnameseFont(doc);
     
     if (fontName) {
       doc.setFont(fontName, 'normal');
@@ -142,8 +148,8 @@ export default function StudentList() {
   };
 
   const exportStudentReport = async (student: Student) => {
-    const doc = new jsPDF() as any;
-    const fontName = await addVietnameseFont(doc);
+    const doc = new jsPDF();
+    const fontName = addVietnameseFont(doc);
     
     if (fontName) {
       doc.setFont(fontName, 'normal');
@@ -197,6 +203,21 @@ export default function StudentList() {
     return matchesSearch && matchesClass;
   });
 
+  const { currentPage, totalPages, setCurrentPage, paginatedItems } = usePagination<Student>(filteredStudents, 8);
+
+  const handleExportExcel = () => {
+    const data = paginatedItems.map(s => ({
+      'Học sinh': s.name,
+      'Ngày sinh': s.birthDate,
+      'Lớp': classes.find(c => c.id === s.classId)?.name || 'N/A',
+      'Phụ huynh': s.parentName,
+      'SĐT': s.parentPhone,
+      'Trạng thái': s.status === StudentStatus.ACTIVE ? 'Đang học' : 'Nghỉ học'
+    }));
+    exportToExcel(data, 'danh-sach-hoc-sinh');
+    toast('Xuất Excel thành công!', 'success');
+  };
+
   return (
     <div className="space-y-10 pb-10">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-slate-200 pb-8">
@@ -210,11 +231,18 @@ export default function StudentList() {
         </div>
         <div className="flex gap-3">
           <button 
+            onClick={handleExportExcel}
+            className="group px-6 py-3 bg-white border border-slate-200 text-slate-900 rounded-xl text-[10px] font-black tracking-widest uppercase hover:border-slate-800 transition-all flex items-center gap-2 active:scale-95 shadow-sm"
+          >
+            <Download size={14} />
+            XUẤT EXCEL
+          </button>
+          <button 
             onClick={exportPDF}
             className="group px-6 py-3 bg-white border border-slate-200 text-slate-900 rounded-xl text-[10px] font-black tracking-widest uppercase hover:border-slate-800 transition-all flex items-center gap-2 active:scale-95 shadow-sm"
           >
             <Download size={14} />
-            XUẤT BÁO CÁO
+            XUẤT PDF
           </button>
           <button 
             id="add-student-btn"
@@ -272,7 +300,7 @@ export default function StudentList() {
                 </div>
               </div>
             ))
-          ) : filteredStudents.map((student, idx) => (
+          ) : paginatedItems.map((student, idx) => (
             <div key={student.id} className="p-6 space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
@@ -333,7 +361,7 @@ export default function StudentList() {
                     </td>
                   </tr>
                 ))
-              ) : filteredStudents.map((student, idx) => (
+              ) : paginatedItems.map((student, idx) => (
                 <motion.tr 
                   key={student.id}
                   initial={{ opacity: 0, x: -10 }}
@@ -401,6 +429,7 @@ export default function StudentList() {
             </tbody>
           </table>
         </div>
+        {!isLoading && <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />}
         {!isLoading && filteredStudents.length === 0 && (
           <div className="py-20 text-center">
              <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100 text-slate-300">

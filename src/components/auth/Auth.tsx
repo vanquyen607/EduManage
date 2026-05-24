@@ -1,6 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { 
   signInWithPopup, 
+  signInWithRedirect,
+  getRedirectResult,
   GoogleAuthProvider, 
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, 
@@ -10,14 +14,27 @@ import { auth } from '@/src/lib/firebase';
 import { motion, AnimatePresence } from 'motion/react';
 import { GraduationCap, Mail, Lock, User, ArrowRight, Loader2 } from 'lucide-react';
 import { cn } from '@/src/lib/utils';
+import { authSchema, registerSchema } from '@/src/lib/validation';
 
 export default function Auth() {
   const [mode, setMode] = useState<'login' | 'register'>('login');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    getRedirectResult(auth).catch(() => {});
+  }, []);
+
+  const schema = mode === 'register' ? registerSchema : authSchema;
+
+  const { register: reg, handleSubmit, formState: { errors }, reset } = useForm({
+    resolver: zodResolver(schema),
+    defaultValues: { email: '', password: '', name: '' } as any
+  });
+
+  React.useEffect(() => {
+    reset({ email: '', password: '', name: '' } as any);
+  }, [mode, reset]);
 
   const handleGoogleLogin = async () => {
     const provider = new GoogleAuthProvider();
@@ -26,23 +43,34 @@ export default function Auth() {
     try {
       await signInWithPopup(auth, provider);
     } catch (err: any) {
-      setError(err.message);
+      if (err.code === 'auth/popup-blocked' || err.code === 'auth/popup-closed-by-user') {
+        try {
+          await signInWithRedirect(auth, provider);
+        } catch {
+          setError('Trình duyệt chặn cửa sổ đăng nhập. Vui lòng cho phép popup hoặc thử đăng nhập bằng email.');
+        }
+      } else if (err.code === 'auth/unauthorized-domain') {
+        setError('Domain chưa được cấp phép. Vui lòng liên hệ quản trị viên.');
+      } else if (err.code === 'auth/operation-not-allowed') {
+        setError('Đăng nhập Google chưa được bật. Vui lòng kiểm tra cấu hình Firebase.');
+      } else {
+        setError(err.message);
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleAuthSubmit = async (data: any) => {
     setLoading(true);
     setError(null);
 
     try {
       if (mode === 'login') {
-        await signInWithEmailAndPassword(auth, email, password);
+        await signInWithEmailAndPassword(auth, data.email, data.password);
       } else {
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        await updateProfile(userCredential.user, { displayName: name });
+        const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
+        await updateProfile(userCredential.user, { displayName: data.name });
       }
     } catch (err: any) {
       setError(err.message || 'Có lỗi xảy ra, vui lòng thử lại.');
@@ -102,7 +130,7 @@ export default function Auth() {
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit(handleAuthSubmit)} className="space-y-4">
             <AnimatePresence mode="wait">
               {mode === 'register' && (
                 <motion.div
@@ -115,14 +143,13 @@ export default function Auth() {
                   <div className="relative">
                     <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                     <input 
+                      {...(reg as any)('name')}
                       type="text" 
-                      required
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
                       placeholder="Nguyễn Văn A"
                       className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3.5 pl-12 pr-4 text-sm focus:bg-white focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition-all outline-none"
                     />
                   </div>
+                  {(errors as any).name && <p className="text-[10px] text-red-500 font-medium ml-1">{(errors as any).name.message as string}</p>}
                 </motion.div>
               )}
             </AnimatePresence>
@@ -132,14 +159,13 @@ export default function Auth() {
               <div className="relative">
                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                 <input 
+                  {...reg('email')}
                   type="email" 
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
                   placeholder="admin@example.com"
                   className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3.5 pl-12 pr-4 text-sm focus:bg-white focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition-all outline-none"
                 />
               </div>
+              {errors.email && <p className="text-[10px] text-red-500 font-medium ml-1">{errors.email.message as string}</p>}
             </div>
 
             <div className="space-y-1.5">
@@ -147,14 +173,13 @@ export default function Auth() {
               <div className="relative">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                 <input 
+                  {...reg('password')}
                   type="password" 
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3.5 pl-12 pr-4 text-sm focus:bg-white focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition-all outline-none"
                 />
               </div>
+              {errors.password && <p className="text-[10px] text-red-500 font-medium ml-1">{errors.password.message as string}</p>}
             </div>
 
             {error && (

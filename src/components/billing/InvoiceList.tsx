@@ -16,17 +16,24 @@ import {
 } from 'lucide-react';
 import { billingService } from '@/src/services/billingService';
 import { studentService } from '@/src/services/studentService';
-import { Invoice, Student, InvoiceStatus } from '@/src/types';
+import { classService } from '@/src/services/classService';
+import { Invoice, Student, InvoiceStatus, StudentStatus } from '@/src/types';
 import { cn, formatCurrency } from '@/src/lib/utils';
 import { motion } from 'motion/react';
 import Modal from '@/src/components/ui/Modal';
 import { getPaymentQRUrl } from '@/src/lib/bankConfig';
 import { settingsService, BankSettings } from '@/src/services/settingsService';
 import BankSettingsForm from './BankSettingsForm';
+import Pagination, { usePagination } from '@/src/components/ui/Pagination';
+import { TableSkeleton } from '@/src/components/ui/Skeleton';
+import { exportToExcel } from '@/src/lib/exportUtils';
+import { useToast } from '@/src/lib/toast';
 
 export default function InvoiceList() {
+  const { toast } = useToast();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
+  const [classFeeMap, setClassFeeMap] = useState<Record<string, number>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [showSettings, setShowSettings] = useState(false);
   const [bankSettings, setBankSettings] = useState<BankSettings | null>(null);
@@ -38,6 +45,8 @@ export default function InvoiceList() {
   const [invoiceToDelete, setInvoiceToDelete] = useState<string | null>(null);
   const [editAmount, setEditAmount] = useState<number>(0);
   const [editStatus, setEditStatus] = useState<InvoiceStatus>(InvoiceStatus.PENDING);
+
+  const { currentPage, totalPages, setCurrentPage, paginatedItems } = usePagination<Invoice>(invoices, 8);
 
   useEffect(() => {
     fetchData();
@@ -56,12 +65,16 @@ export default function InvoiceList() {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const [iData, sData] = await Promise.all([
+      const [iData, sData, cData] = await Promise.all([
         billingService.getAll(),
-        studentService.getAll()
+        studentService.getAll(),
+        classService.getAll()
       ]);
       setInvoices(iData);
       setStudents(sData);
+      const map: Record<string, number> = {};
+      cData.forEach(c => { map[c.id] = c.feePerSession; });
+      setClassFeeMap(map);
     } catch (err) {
       console.error(err);
     } finally {
@@ -84,11 +97,12 @@ export default function InvoiceList() {
     if (!invoiceToDelete) return;
     try {
       await billingService.delete(invoiceToDelete);
+      toast('Đã xóa hóa đơn!', 'success');
       setIsConfirmDeleteOpen(false);
       setInvoiceToDelete(null);
       fetchData();
     } catch (err) {
-      console.error(err);
+      toast('Có lỗi khi xóa hóa đơn!', 'error');
     }
   };
 
@@ -107,10 +121,11 @@ export default function InvoiceList() {
         totalAmount: editAmount,
         status: editStatus
       });
+      toast('Cập nhật hóa đơn thành công!', 'success');
       setIsEditModalOpen(false);
       fetchData();
     } catch (err) {
-      console.error(err);
+      toast('Có lỗi khi cập nhật hóa đơn!', 'error');
     }
   };
 
@@ -135,6 +150,32 @@ export default function InvoiceList() {
           <button 
             type="button"
             onClick={() => {
+              if (invoices.length === 0) {
+                toast('Không có dữ liệu để xuất!', 'warning');
+                return;
+              }
+              const data = invoices.map(inv => {
+                const student = students.find(s => s.id === inv.studentId);
+                return {
+                  'Học sinh': student?.name || 'N/A',
+                  'Tháng': `Tháng ${inv.month}/${inv.year}`,
+                  'Số buổi': inv.sessionCount,
+                  'Số tiền': inv.totalAmount,
+                  'Trạng thái': inv.status === InvoiceStatus.PAID ? 'Đã đóng' : 'Chờ thu',
+                  'Ngày tạo': inv.createdAt
+                };
+              });
+              exportToExcel(data, 'danh-sach-hoa-don');
+              toast('Xuất Excel thành công!', 'success');
+            }}
+            className="px-6 py-3 rounded-xl transition-all border bg-white text-slate-600 border-slate-200 hover:border-slate-800 shadow-sm flex items-center gap-2 text-[10px] font-black tracking-widest uppercase"
+          >
+            <Download size={14} />
+            Xuất Excel
+          </button>
+          <button 
+            type="button"
+            onClick={() => {
               setShowSettings(!showSettings);
               if (!showSettings) loadBankSettings();
             }}
@@ -154,29 +195,43 @@ export default function InvoiceList() {
               const currentYear = new Date().getFullYear();
               let createdCount = 0;
               let skippedCount = 0;
+              let noAttendCount = 0;
 
-              for (const s of students) {
+              const activeStudents = students.filter(s => s.status === StudentStatus.ACTIVE);
+
+              for (const s of activeStudents) {
                  const exists = invoices.some(inv => 
                     inv.studentId === s.id && 
                     inv.month === currentMonth && 
                     inv.year === currentYear
                  );
 
-                 if (!exists) {
-                   try {
-                     await billingService.generateInvoice(s.id, currentMonth, currentYear);
-                     createdCount++;
-                   } catch(e) { console.error(e); }
-                 } else {
+                 if (exists) {
                    skippedCount++;
+                   continue;
                  }
+
+                 const fee = classFeeMap[s.classId];
+                 if (!fee) {
+                   skippedCount++;
+                   continue;
+                 }
+
+                 try {
+                   const result = await billingService.generateInvoice(s.id, currentMonth, currentYear, fee);
+                   if (result) {
+                     createdCount++;
+                   } else {
+                     noAttendCount++;
+                   }
+                 } catch(e) { console.error(e); }
               }
 
-              if (createdCount > 0) {
-                console.log(`Successfully created ${createdCount} invoices for month ${currentMonth}.`);
-              } else if (skippedCount > 0) {
-                console.log(`All invoices for month ${currentMonth}/${currentYear} already exist.`);
-              }
+              let msg = '';
+              if (createdCount > 0) msg += `Đã tạo ${createdCount} hóa đơn. `;
+              if (noAttendCount > 0) msg += `${noAttendCount} học viên chưa có buổi học. `;
+              if (skippedCount > 0) msg += `${skippedCount} học viên đã có hóa đơn.`;
+              if (msg) toast(msg.trim(), createdCount > 0 ? 'success' : 'info');
 
               fetchData();
               setIsLoading(false);
@@ -288,26 +343,26 @@ export default function InvoiceList() {
                   </tr>
                 ))
               ) : invoices.length > 0 ? (
-                invoices.map((invoice, idx) => (
-                  <motion.tr 
+                paginatedItems.map((invoice, idx) => (
+                  <motion.tr
                     layout
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: idx * 0.03 }}
-                    key={invoice.id} 
+                    key={invoice.id}
                     className="hover:bg-slate-50/50 transition-colors group"
                   >
                     <td className="px-8 py-6">
                       <div className="flex items-center gap-3">
-                         <div className="w-10 h-10 rounded-2xl bg-slate-100 flex items-center justify-center font-bold text-slate-500">
-                           {students.find(s => s.id === invoice.studentId)?.name?.charAt(0) || '?'}
-                         </div>
-                         <div>
-                            <p className="font-bold text-slate-900">
-                              {students.find(s => s.id === invoice.studentId)?.name || 'N/A'}
-                            </p>
-                            <p className="text-[10px] font-mono text-slate-400 uppercase tracking-tighter">ID: {invoice.id.slice(0, 8)}</p>
-                         </div>
+                        <div className="w-10 h-10 rounded-2xl bg-slate-100 flex items-center justify-center font-bold text-slate-500">
+                          {students.find(s => s.id === invoice.studentId)?.name?.charAt(0) || '?'}
+                        </div>
+                        <div>
+                          <p className="font-bold text-slate-900">
+                            {students.find(s => s.id === invoice.studentId)?.name || 'N/A'}
+                          </p>
+                          <p className="text-[10px] font-mono text-slate-400 uppercase tracking-tighter">ID: {invoice.id.slice(0, 8)}</p>
+                        </div>
                       </div>
                     </td>
                     <td className="px-8 py-6">
@@ -328,28 +383,16 @@ export default function InvoiceList() {
                     </td>
                     <td className="px-8 py-6 text-right">
                       <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-all">
-                         <button 
-                          type="button"
-                          onClick={(e) => handleEditClick(e, invoice)}
-                          className="p-2.5 text-slate-400 hover:text-primary hover:bg-white rounded-xl shadow-sm border border-transparent hover:border-slate-100 transition-all"
-                         >
+                        <button type="button" onClick={(e) => handleEditClick(e, invoice)} className="p-2.5 text-slate-400 hover:text-primary hover:bg-white rounded-xl shadow-sm border border-transparent hover:border-slate-100 transition-all">
                           <Edit2 size={16} />
-                         </button>
-                         <button 
-                          type="button"
-                          onClick={(e) => { e.stopPropagation(); handleDelete(invoice.id); }}
-                          className="p-2.5 text-slate-400 hover:text-red-500 hover:bg-white rounded-xl shadow-sm border border-transparent hover:border-slate-100 transition-all"
-                         >
+                        </button>
+                        <button type="button" onClick={(e) => { e.stopPropagation(); handleDelete(invoice.id); }} className="p-2.5 text-slate-400 hover:text-red-500 hover:bg-white rounded-xl shadow-sm border border-transparent hover:border-slate-100 transition-all">
                           <Trash2 size={16} />
-                         </button>
-                         {invoice.status === InvoiceStatus.PENDING && (
-                          <button 
-                            type="button"
-                            onClick={(e) => handlePayment(e, invoice)}
-                            className="ml-2 px-4 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-black tracking-widest uppercase flex items-center gap-2 shadow-md active:scale-95 transition-all"
-                          >
-                             THANH TOÁN
-                             <QrCode size={12} />
+                        </button>
+                        {invoice.status === InvoiceStatus.PENDING && (
+                          <button type="button" onClick={(e) => handlePayment(e, invoice)} className="ml-2 px-4 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-black tracking-widest uppercase flex items-center gap-2 shadow-md active:scale-95 transition-all">
+                            THANH TOÁN
+                            <QrCode size={12} />
                           </button>
                         )}
                       </div>
@@ -365,15 +408,11 @@ export default function InvoiceList() {
               )}
             </tbody>
           </table>
+          {!isLoading && <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />}
         </div>
       </div>
 
-      {/* Payment Info Modal */}
-      <Modal 
-        isOpen={isPaymentModalOpen} 
-        onClose={() => setIsPaymentModalOpen(false)} 
-        title="Thông tin Thanh toán"
-      >
+      <Modal isOpen={isPaymentModalOpen} onClose={() => setIsPaymentModalOpen(false)} title="Thông tin Thanh toán">
         {selectedInvoice && bankSettings && (
           <div className="space-y-4 md:space-y-6">
             <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 flex items-center justify-between">
@@ -430,20 +469,15 @@ export default function InvoiceList() {
             </div>
 
             <div className="pt-2 md:pt-4 flex gap-3">
-               <button 
-                 onClick={() => setIsPaymentModalOpen(false)}
-                 className="flex-1 py-3 bg-slate-50 text-slate-600 rounded-xl text-xs md:text-sm font-bold hover:bg-slate-100 transition-all border border-slate-100 px-4"
-               >
+               <button onClick={() => setIsPaymentModalOpen(false)} className="flex-1 py-3 bg-slate-50 text-slate-600 rounded-xl text-xs md:text-sm font-bold hover:bg-slate-100 transition-all border border-slate-100 px-4">
                  Đóng
                </button>
-               <button 
-                 onClick={async () => {
-                   await billingService.markAsPaid(selectedInvoice.id);
-                   setIsPaymentModalOpen(false);
-                   fetchData();
-                 }}
-                 className="flex-1 py-3 bg-emerald-600 text-white rounded-xl text-xs md:text-sm font-bold hover:bg-emerald-700 shadow-md transition-all active:scale-95 flex items-center justify-center gap-2 px-4 whitespace-nowrap"
-               >
+               <button onClick={async () => {
+                 await billingService.markAsPaid(selectedInvoice.id);
+                 toast('Xác nhận thu học phí thành công!', 'success');
+                 setIsPaymentModalOpen(false);
+                 fetchData();
+               }} className="flex-1 py-3 bg-emerald-600 text-white rounded-xl text-xs md:text-sm font-bold hover:bg-emerald-700 shadow-md transition-all active:scale-95 flex items-center justify-center gap-2 px-4 whitespace-nowrap">
                  <CheckCircle2 size={16} />
                  Xác nhận đã thu
                </button>

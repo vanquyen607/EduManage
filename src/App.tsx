@@ -10,13 +10,15 @@ import GradeManager from './components/grades/GradeManager';
 import ScheduleManager from './components/schedule/ScheduleManager';
 import SettingsView from './components/settings/SettingsView';
 import { motion, AnimatePresence } from 'motion/react';
-import { Menu } from 'lucide-react';
+import { Menu, Sun, Moon } from 'lucide-react';
 import { cn } from './lib/utils';
+import { useTheme } from './lib/themeContext';
 
 import { auth } from './lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 
 export default function App() {
+  const { theme, toggleTheme } = useTheme();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
@@ -91,9 +93,16 @@ export default function App() {
 
           <div className="flex items-center gap-2 md:gap-4 ml-auto">
              <div className="text-right hidden xs:block">
-              <p className="text-sm font-bold text-slate-900 leading-none truncate max-w-[120px] md:max-w-none">{user.displayName || 'Admin'}</p>
+              <p className="text-sm font-bold text-slate-900 dark:text-slate-100 leading-none truncate max-w-[120px] md:max-w-none">{user.displayName || 'Admin'}</p>
               <p className="text-[10px] text-slate-500 mt-1 uppercase font-black tracking-tighter">HỆ THỐNG QUẢN TRỊ</p>
             </div>
+            <button
+              onClick={toggleTheme}
+              className="p-2.5 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-all active:scale-90"
+              title={theme === 'dark' ? 'Chế độ sáng' : 'Chế độ tối'}
+            >
+              {theme === 'dark' ? <Sun size={16} className="text-amber-500" /> : <Moon size={16} className="text-slate-500" />}
+            </button>
             <button 
               onClick={() => auth.signOut()}
               className="group relative flex items-center"

@@ -22,12 +22,16 @@ import { Class, ClassSchedule } from '@/src/types';
 import { motion } from 'motion/react';
 import { cn } from '@/src/lib/utils';
 import Modal from '@/src/components/ui/Modal';
+import { CardSkeleton } from '@/src/components/ui/Skeleton';
 import { withOwner, addOwner } from '@/src/lib/firebaseUtils';
+import { useToast } from '@/src/lib/toast';
 
 const DAYS = ['Chủ nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
 
 export default function ScheduleManager() {
+  const { toast } = useToast();
   const [classes, setClasses] = useState<Class[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
   const [conflictError, setConflictError] = useState<string | null>(null);
@@ -46,14 +50,23 @@ export default function ScheduleManager() {
     const q = query(collection(db, 'classes'), where('ownerId', '==', uid));
     return onSnapshot(q, (snap) => {
       setClasses(snap.docs.map(d => ({ id: d.id, ...d.data() } as Class)));
-    }, (err) => console.error(err));
+      setIsLoading(false);
+    }, (err) => {
+      toast('Lỗi tải dữ liệu lịch học!', 'error');
+      setIsLoading(false);
+    });
   }, []);
 
   const handleUpdateSchedule = async (classId: string, updatedSchedule: ClassSchedule[]) => {
-    await updateDoc(doc(db, 'classes', classId), addOwner({
-      schedule: updatedSchedule
-    }));
-    setIsAddModalOpen(false);
+    try {
+      await updateDoc(doc(db, 'classes', classId), addOwner({
+        schedule: updatedSchedule
+      }));
+      setIsAddModalOpen(false);
+      toast('Cập nhật lịch học thành công!', 'success');
+    } catch (err) {
+      toast('Lỗi khi cập nhật lịch học!', 'error');
+    }
   };
 
   const isOverlapping = (s1: ClassSchedule, s2: ClassSchedule) => {
@@ -197,7 +210,16 @@ export default function ScheduleManager() {
          </div>
          
          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {classes.map(cls => (
+            {isLoading ? (
+              <div className="col-span-full">
+                <CardSkeleton count={3} />
+              </div>
+            ) : classes.length === 0 ? (
+              <div className="col-span-full py-20 text-center border-2 border-dashed border-slate-100 rounded-3xl">
+                <CalendarIcon size={32} className="mx-auto mb-3 text-slate-300" />
+                <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Chưa có lớp học nào</p>
+              </div>
+            ) : classes.map(cls => (
               <div key={cls.id} className="p-5 border border-slate-100 bg-slate-50 rounded-2xl hover:bg-white hover:shadow-md transition-all group">
                 <div className="flex items-center justify-between mb-4">
                    <p className="font-bold text-slate-900">{cls.name}</p>

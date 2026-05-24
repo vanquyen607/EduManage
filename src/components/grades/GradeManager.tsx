@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { 
   Plus, 
   Search, 
@@ -7,7 +9,8 @@ import {
   ChevronRight, 
   Star,
   TrendingUp,
-  FileText
+  FileText,
+  Download
 } from 'lucide-react';
 import { db, auth } from '@/src/lib/firebase';
 import { 
@@ -25,8 +28,14 @@ import { Student, Class, Grade } from '@/src/types';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/src/lib/utils';
 import Modal from '@/src/components/ui/Modal';
+import { TableSkeleton } from '@/src/components/ui/Skeleton';
+import Pagination, { usePagination } from '@/src/components/ui/Pagination';
+import { exportToExcel, exportToCSV } from '@/src/lib/exportUtils';
+import { gradeSchema, type GradeFormData } from '@/src/lib/validation';
+import { useToast } from '@/src/lib/toast';
 
 export default function GradeManager() {
+  const { toast } = useToast();
   const [grades, setGrades] = useState<Grade[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
   const [classes, setClasses] = useState<Class[]>([]);
@@ -36,21 +45,27 @@ export default function GradeManager() {
   
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingGrade, setEditingGrade] = useState<Grade | null>(null);
-  const [newGrade, setNewGrade] = useState<Partial<Grade>>({
-    subject: 'Tiếng Anh',
-    weight: 1,
-    date: new Date().toISOString().split('T')[0]
+
+  const { register, handleSubmit, reset, setValue, formState: { errors, isSubmitting } } = useForm<GradeFormData>({
+    resolver: zodResolver(gradeSchema),
+    defaultValues: {
+      studentId: '',
+      subject: 'Tiếng Anh',
+      score: undefined as any,
+      weight: 1,
+      date: new Date().toISOString().split('T')[0]
+    }
   });
 
   const handleOpenAddModal = () => {
     setEditingGrade(null);
-    setNewGrade({ subject: 'Tiếng Anh', weight: 1, date: new Date().toISOString().split('T')[0] });
+    reset({ studentId: '', subject: 'Tiếng Anh', score: undefined as any, weight: 1, date: new Date().toISOString().split('T')[0] });
     setIsAddModalOpen(true);
   };
 
   const handleOpenEditModal = (grade: Grade) => {
     setEditingGrade(grade);
-    setNewGrade({
+    reset({
       studentId: grade.studentId,
       subject: grade.subject,
       score: grade.score,
@@ -71,15 +86,15 @@ export default function GradeManager() {
     const unsubGrades = onSnapshot(qGrades, (snap) => {
       setGrades(snap.docs.map(d => ({ id: d.id, ...d.data() } as Grade)));
       setLoading(false);
-    }, (err) => console.error(err));
+    }, (err) => toast('Lỗi tải dữ liệu điểm', 'error'));
     
     const unsubStudents = onSnapshot(qStudents, (snap) => {
       setStudents(snap.docs.map(d => ({ id: d.id, ...d.data() } as Student)));
-    }, (err) => console.error(err));
+    }, (err) => toast('Lỗi tải dữ liệu học sinh', 'error'));
 
     const unsubClasses = onSnapshot(qClasses, (snap) => {
       setClasses(snap.docs.map(d => ({ id: d.id, ...d.data() } as Class)));
-    }, (err) => console.error(err));
+    }, (err) => toast('Lỗi tải dữ liệu lớp học', 'error'));
 
     return () => {
       unsubGrades();
@@ -88,35 +103,35 @@ export default function GradeManager() {
     };
   }, []);
 
-  const handleAddGrade = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newGrade.studentId || newGrade.score === undefined) return;
-
-    const student = students.find(s => s.id === newGrade.studentId);
+  const onGradeSubmit = async (data: GradeFormData) => {
+    const student = students.find(s => s.id === data.studentId);
     
     const gradeData = {
-      ...newGrade,
+      ...data,
       classId: student?.classId || '',
-      score: Number(newGrade.score)
     };
 
-    if (editingGrade) {
-      await updateDoc(doc(db, 'grades', editingGrade.id), addOwner(gradeData));
-    } else {
-      await addDoc(collection(db, 'grades'), addOwner(gradeData));
+    try {
+      if (editingGrade) {
+        await updateDoc(doc(db, 'grades', editingGrade.id), addOwner(gradeData));
+        toast('Cập nhật điểm thành công!', 'success');
+      } else {
+        await addDoc(collection(db, 'grades'), addOwner(gradeData));
+        toast('Thêm điểm thành công!', 'success');
+      }
+      setIsAddModalOpen(false);
+      setEditingGrade(null);
+    } catch (error) {
+      toast('Có lỗi xảy ra khi lưu điểm!', 'error');
     }
-
-    setIsAddModalOpen(false);
-    setNewGrade({ subject: 'Tiếng Anh', weight: 1, date: new Date().toISOString().split('T')[0] });
-    setEditingGrade(null);
   };
 
   const handleDeleteGrade = async (id: string) => {
     try {
       await deleteDoc(doc(db, 'grades', id));
+      toast('Đã xóa điểm!', 'success');
     } catch (error) {
-      console.error("Error deleting grade:", error);
-      alert("Có lỗi xảy ra khi xóa điểm.");
+      toast('Có lỗi xảy ra khi xóa điểm!', 'error');
     }
   };
 
@@ -126,6 +141,24 @@ export default function GradeManager() {
     const matchesClass = selectedClassId === 'all' || g.classId === selectedClassId;
     return matchesSearch && matchesClass;
   });
+
+  const { currentPage, totalPages, setCurrentPage, paginatedItems } = usePagination<Grade>(filteredGrades, 10);
+
+  const handleExportExcel = () => {
+    const data = filteredGrades.map(g => {
+      const student = students.find(s => s.id === g.studentId);
+      return {
+        'Học sinh': student?.name || '---',
+        'Lớp': classes.find(c => c.id === g.classId)?.name || '---',
+        'Môn học': g.subject,
+        'Điểm': g.score,
+        'Loại điểm': getWeightLabel(g.weight),
+        'Ngày nhập': g.date
+      };
+    });
+    exportToExcel(data, 'danh-sach-diem');
+    toast('Xuất Excel thành công!', 'success');
+  };
 
   const getWeightLabel = (w: number) => {
     switch (w) {
@@ -144,13 +177,22 @@ export default function GradeManager() {
           <h1 className="text-3xl font-serif font-bold text-slate-900">Quản lý Điểm</h1>
           <p className="text-slate-500 text-sm mt-1">Theo dõi kết quả học tập của học viên</p>
         </div>
-        <button 
-          onClick={handleOpenAddModal}
-          className="bg-slate-900 text-white px-6 py-3 rounded-2xl font-black text-xs tracking-widest uppercase hover:bg-slate-800 transition-all flex items-center gap-2 shadow-lg shadow-slate-200 active:scale-95"
-        >
-          <Plus size={16} />
-          <span>NHẬP ĐIỂM MỚI</span>
-        </button>
+        <div className="flex gap-3">
+          <button 
+            onClick={handleExportExcel}
+            className="bg-white border border-slate-200 text-slate-600 px-6 py-3 rounded-2xl font-black text-xs tracking-widest uppercase hover:border-slate-800 transition-all flex items-center gap-2 shadow-sm active:scale-95"
+          >
+            <Download size={16} />
+            <span>XUẤT EXCEL</span>
+          </button>
+          <button 
+            onClick={handleOpenAddModal}
+            className="bg-slate-900 text-white px-6 py-3 rounded-2xl font-black text-xs tracking-widest uppercase hover:bg-slate-800 transition-all flex items-center gap-2 shadow-lg shadow-slate-200 active:scale-95"
+          >
+            <Plus size={16} />
+            <span>NHẬP ĐIỂM MỚI</span>
+          </button>
+        </div>
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -199,7 +241,21 @@ export default function GradeManager() {
             </div>
 
             <div className="md:hidden divide-y divide-slate-50">
-              {filteredGrades.map((g) => {
+              {loading ? (
+                [...Array(3)].map((_, i) => (
+                  <div key={i} className="p-4 animate-pulse space-y-3">
+                    <div className="h-4 bg-slate-100 rounded w-1/2" />
+                    <div className="h-4 bg-slate-50 rounded w-full" />
+                  </div>
+                ))
+              ) : paginatedItems.length === 0 ? (
+                <div className="p-6 text-center">
+                  <div className="p-4 bg-slate-50 rounded-full w-fit mx-auto mb-3">
+                    <FileText size={24} className="text-slate-300" />
+                  </div>
+                  <p className="text-xs font-bold text-slate-400">Không có dữ liệu</p>
+                </div>
+              ) : paginatedItems.map((g) => {
                 const student = students.find(s => s.id === g.studentId);
                 return (
                   <div key={g.id} className="p-4 space-y-3">
@@ -305,6 +361,7 @@ export default function GradeManager() {
                   )}
                 </tbody>
               </table>
+              {!loading && <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />}
             </div>
           </div>
         </div>
@@ -315,56 +372,38 @@ export default function GradeManager() {
         onClose={() => setIsAddModalOpen(false)} 
         title={editingGrade ? "Chỉnh sửa điểm" : "Nhập điểm học tập"}
       >
-        <form onSubmit={handleAddGrade} className="space-y-4">
+        <form onSubmit={handleSubmit(onGradeSubmit)} className="space-y-4">
           <div>
             <label className="text-[11px] font-black uppercase tracking-widest text-slate-400 mb-2 block">Dành cho học sinh</label>
             <select 
-              required
+              {...register('studentId')}
               className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm"
-              value={newGrade.studentId || ''}
-              onChange={(e) => setNewGrade({ ...newGrade, studentId: e.target.value })}
             >
               <option value="">Chọn học sinh</option>
               {students.map(s => (
                 <option key={s.id} value={s.id}>{s.name} - {classes.find(c => c.id === s.classId)?.name}</option>
               ))}
             </select>
+            {errors.studentId && <p className="text-[10px] text-red-500 mt-1">{errors.studentId.message}</p>}
           </div>
           
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="text-[11px] font-black uppercase tracking-widest text-slate-400 mb-2 block">Môn học</label>
-              <input 
-                type="text" 
-                required
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm"
-                value={newGrade.subject || ''}
-                onChange={(e) => setNewGrade({ ...newGrade, subject: e.target.value })}
-              />
+              <input {...register('subject')} type="text" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm" />
+              {errors.subject && <p className="text-[10px] text-red-500 mt-1">{errors.subject.message}</p>}
             </div>
             <div>
               <label className="text-[11px] font-black uppercase tracking-widest text-slate-400 mb-2 block">Điểm số</label>
-              <input 
-                type="number" 
-                required
-                step="0.1"
-                min="0"
-                max="10"
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-serif font-bold"
-                value={newGrade.score ?? ''}
-                onChange={(e) => setNewGrade({ ...newGrade, score: Number(e.target.value) })}
-              />
+              <input {...register('score', { valueAsNumber: true })} type="number" step="0.1" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-serif font-bold" />
+              {errors.score && <p className="text-[10px] text-red-500 mt-1">{errors.score.message}</p>}
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="text-[11px] font-black uppercase tracking-widest text-slate-400 mb-2 block">Loại điểm</label>
-              <select 
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm"
-                value={newGrade.weight || 1}
-                onChange={(e) => setNewGrade({ ...newGrade, weight: Number(e.target.value) })}
-              >
+              <select {...register('weight', { valueAsNumber: true })} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm">
                 <option value={1}>Thường xuyên</option>
                 <option value={2}>15 phút</option>
                 <option value={3}>Giữa kỳ</option>
@@ -373,33 +412,24 @@ export default function GradeManager() {
             </div>
             <div>
               <label className="text-[11px] font-black uppercase tracking-widest text-slate-400 mb-2 block">Ngày nhập</label>
-              <input 
-                type="date"
-                required
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm"
-                value={newGrade.date || ''}
-                onChange={(e) => setNewGrade({ ...newGrade, date: e.target.value })}
-              />
+              <input {...register('date')} type="date" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm" />
+              {errors.date && <p className="text-[10px] text-red-500 mt-1">{errors.date.message}</p>}
             </div>
           </div>
 
           <div className="pt-4 flex gap-3">
-             <button 
-               type="button"
-               onClick={() => setIsAddModalOpen(false)}
-               className="flex-1 py-4 bg-slate-100 text-slate-700 rounded-2xl text-[10px] font-black tracking-widest uppercase hover:bg-slate-200 transition-all font-sans"
-             >
+             <button type="button" onClick={() => setIsAddModalOpen(false)} className="flex-1 py-4 bg-slate-100 text-slate-700 rounded-2xl text-[10px] font-black tracking-widest uppercase hover:bg-slate-200 transition-all font-sans">
                HỦY BỎ
              </button>
-             <button 
-               type="submit"
-               className="flex-1 py-4 bg-slate-900 text-white rounded-2xl text-[10px] font-black tracking-widest uppercase hover:bg-slate-800 transition-all shadow-lg active:scale-95 font-sans"
-             >
+             <button type="submit" disabled={isSubmitting} className="flex-1 py-4 bg-slate-900 text-white rounded-2xl text-[10px] font-black tracking-widest uppercase hover:bg-slate-800 transition-all shadow-lg active:scale-95 font-sans">
                LƯU KẾT QUẢ
              </button>
           </div>
         </form>
       </Modal>
+      {filteredGrades.length > 10 && !loading && (
+        <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
+      )}
     </div>
   );
 }

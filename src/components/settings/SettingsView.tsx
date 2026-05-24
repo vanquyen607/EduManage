@@ -11,14 +11,17 @@ import {
   Settings as SettingsIcon,
   LogOut,
   Moon,
+  Sun,
   Edit
 } from 'lucide-react';
 import { auth } from '@/src/lib/firebase';
 import { updateProfile, updateEmail } from 'firebase/auth';
 import { cn } from '@/src/lib/utils';
 import { motion } from 'motion/react';
+import { useTheme } from '@/src/lib/themeContext';
 
 export default function SettingsView() {
+  const { theme, toggleTheme } = useTheme();
   const user = auth.currentUser;
   const [activeTab, setActiveTab] = useState('account');
   const [loading, setLoading] = useState(false);
@@ -93,7 +96,7 @@ export default function SettingsView() {
   return (
     <div className="max-w-5xl mx-auto space-y-8 pb-20">
       <header>
-        <h1 className="text-3xl font-serif font-bold text-slate-900">Cài đặt</h1>
+        <h1 className="text-3xl font-serif font-bold text-slate-900 dark:text-white">Cài đặt</h1>
         <p className="text-slate-500 text-sm mt-1">Quản lý cấu hình hệ thống và tài khoản của bạn</p>
       </header>
 
@@ -105,7 +108,7 @@ export default function SettingsView() {
                 onClick={() => setActiveTab(item.id)}
                 className={cn(
                   "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-black tracking-widest uppercase transition-all",
-                  activeTab === item.id ? "bg-slate-900 text-white shadow-lg" : "text-slate-500 hover:bg-slate-100"
+                  activeTab === item.id ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-lg" : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
                 )}
              >
                 <item.icon size={16} />
@@ -124,12 +127,12 @@ export default function SettingsView() {
            </button>
         </aside>
 
-        <div className="flex-1 bg-white rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden min-h-[500px]">
+        <div className="flex-1 bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden min-h-[500px]">
            <div className="p-8 sm:p-12">
               {activeTab === 'account' && (
                 <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
                    <div>
-                      <h3 className="text-xl font-serif font-bold text-slate-900 mb-1">Thông tin cá nhân</h3>
+                       <h3 className="text-xl font-serif font-bold text-slate-900 dark:text-white mb-1">Thông tin cá nhân</h3>
                       <p className="text-sm text-slate-500">Cập nhật thông tin nhận diện của bạn trên hệ thống</p>
                    </div>
                    
@@ -200,7 +203,7 @@ export default function SettingsView() {
               {activeTab === 'notifications' && (
                 <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
                    <div>
-                      <h3 className="text-xl font-serif font-bold text-slate-900 mb-1">Thông báo & Email</h3>
+                       <h3 className="text-xl font-serif font-bold text-slate-900 dark:text-white mb-1">Thông báo & Email</h3>
                       <p className="text-sm text-slate-500">Tùy chỉnh cách bạn nhận tin nhắn từ hệ thống</p>
                    </div>
                    <div className="space-y-4">
@@ -226,7 +229,7 @@ export default function SettingsView() {
                {activeTab === 'security' && (
                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
                     <div>
-                       <h3 className="text-xl font-serif font-bold text-slate-900 mb-1">Mật khẩu & Bảo mật</h3>
+                        <h3 className="text-xl font-serif font-bold text-slate-900 dark:text-white mb-1">Mật khẩu & Bảo mật</h3>
                        <p className="text-sm text-slate-500">Giữ an toàn cho tài sản dữ liệu của bạn</p>
                     </div>
                     <div className="p-6 bg-slate-900 rounded-[2rem] text-white space-y-4">
@@ -245,59 +248,92 @@ export default function SettingsView() {
                {activeTab === 'system' && (
                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
                     <div>
-                       <h3 className="text-xl font-serif font-bold text-slate-900 mb-1">Quản lý dữ liệu hệ thống</h3>
+                        <h3 className="text-xl font-serif font-bold text-slate-900 dark:text-white mb-1">Quản lý dữ liệu hệ thống</h3>
                        <p className="text-sm text-slate-500">Thiết lập dữ liệu mẫu hoặc xóa sạch dữ liệu để bắt đầu mới</p>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                       <div className="p-8 bg-slate-50 rounded-[2rem] border border-slate-100 flex flex-col justify-between h-full">
-                          <div className="space-y-4 mb-8">
-                             <div className="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center">
-                                <Globe size={24} />
-                             </div>
-                             <h4 className="text-lg font-bold text-slate-900 leading-tight">Dữ liệu mẫu trải nghiệm</h4>
-                             <p className="text-xs text-slate-500 leading-relaxed">
-                                Tự động tạo các lớp học, học sinh, điểm số và thông báo mẫu để bạn có thể trải nghiệm đầy đủ tính năng của hệ thống ngay lập tức.
-                             </p>
-                          </div>
-                          <button 
-                             onClick={handleAddSampleData}
-                             disabled={loadingAction !== 'none'}
-                             className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black text-[10px] tracking-widest uppercase hover:bg-slate-800 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-                          >
-                             {loadingAction === 'adding' ? 'ĐANG XỬ LÝ...' : (
-                               <>
-                                 <Download size={16} />
-                                 THÊM DỮ LIỆU MẪU
-                               </>
-                             )}
-                          </button>
-                       </div>
+                     <div>
+                        <h4 className="text-lg font-bold text-slate-900 mb-4">Giao diện</h4>
+                        <div className="p-6 bg-slate-50 dark:bg-slate-800 rounded-[2rem] border border-slate-100 dark:border-slate-700 flex items-center justify-between">
+                           <div className="flex items-center gap-4">
+                              <div className="w-12 h-12 bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-2xl flex items-center justify-center">
+                                 {theme === 'dark' ? <Sun size={24} /> : <Moon size={24} />}
+                              </div>
+                              <div>
+                                 <p className="text-sm font-bold text-slate-900 dark:text-white">Chế độ hiển thị</p>
+                                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                                    {theme === 'dark' ? 'Giao diện tối — dễ chịu cho mắt khi làm việc ban đêm' : 'Giao diện sáng — hiển thị rõ ràng trong mọi điều kiện'}
+                                 </p>
+                              </div>
+                           </div>
+                           <button
+                              onClick={toggleTheme}
+                              className={cn(
+                                 "relative w-16 h-9 rounded-full transition-all duration-300 flex items-center px-1",
+                                 theme === 'dark' ? "bg-slate-900 border border-slate-600" : "bg-slate-200 border border-slate-300"
+                              )}
+                           >
+                              <div
+                                 className={cn(
+                                    "w-7 h-7 rounded-full shadow-md transition-transform duration-300 flex items-center justify-center",
+                                    theme === 'dark' ? "translate-x-7 bg-amber-400" : "translate-x-0 bg-white"
+                                 )}
+                              >
+                                 {theme === 'dark' ? <Moon size={12} className="text-slate-900" /> : <Sun size={12} className="text-amber-500" />}
+                              </div>
+                           </button>
+                        </div>
+                     </div>
 
-                       <div className="p-8 bg-red-50/30 rounded-[2rem] border border-red-100 flex flex-col justify-between h-full">
-                          <div className="space-y-4 mb-8">
-                             <div className="w-12 h-12 bg-red-100 text-red-600 rounded-2xl flex items-center justify-center">
-                                <Trash2 size={24} />
-                             </div>
-                             <h4 className="text-lg font-bold text-slate-900 leading-tight">Xóa sạch toàn bộ dữ liệu</h4>
-                             <p className="text-xs text-slate-400 leading-relaxed">
-                                Xóa tất cả các bản ghi hiện có (Lớp học, Học sinh, Điểm số, Hóa đơn...) để chuẩn bị cho việc nhập liệu thật. <span className="font-bold text-red-500">Hành động này không thể hoàn tác!</span>
-                             </p>
-                          </div>
-                          <button 
-                             onClick={handleClearData}
-                             disabled={loadingAction !== 'none'}
-                             className="w-full bg-white border-2 border-red-100 text-red-500 py-4 rounded-2xl font-black text-[10px] tracking-widest uppercase hover:bg-red-500 hover:text-white hover:border-red-500 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-                          >
-                             {loadingAction === 'clearing' ? 'ĐANG XỬ LÝ...' : (
-                               <>
-                                 <Trash2 size={16} />
-                                 BẮT ĐẦU MỚI (RESET)
-                               </>
-                             )}
-                          </button>
-                       </div>
-                    </div>
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="p-8 bg-slate-50 dark:bg-slate-800 rounded-[2rem] border border-slate-100 dark:border-slate-700 flex flex-col justify-between h-full">
+                           <div className="space-y-4 mb-8">
+                              <div className="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center">
+                                 <Globe size={24} />
+                              </div>
+                              <h4 className="text-lg font-bold text-slate-900 dark:text-white leading-tight">Dữ liệu mẫu trải nghiệm</h4>
+                              <p className="text-xs text-slate-500 leading-relaxed">
+                                 Tự động tạo các lớp học, học sinh, điểm số và thông báo mẫu để bạn có thể trải nghiệm đầy đủ tính năng của hệ thống ngay lập tức.
+                              </p>
+                           </div>
+                           <button 
+                              onClick={handleAddSampleData}
+                              disabled={loadingAction !== 'none'}
+                              className="w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 py-4 rounded-2xl font-black text-[10px] tracking-widest uppercase hover:bg-slate-800 dark:hover:bg-slate-100 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                           >
+                              {loadingAction === 'adding' ? 'ĐANG XỬ LÝ...' : (
+                                <>
+                                  <Download size={16} />
+                                  THÊM DỮ LIỆU MẪU
+                                </>
+                              )}
+                           </button>
+                        </div>
+
+                        <div className="p-8 bg-red-50/30 dark:bg-red-950/20 rounded-[2rem] border border-red-100 dark:border-red-900/30 flex flex-col justify-between h-full">
+                           <div className="space-y-4 mb-8">
+                              <div className="w-12 h-12 bg-red-100 text-red-600 rounded-2xl flex items-center justify-center">
+                                 <Trash2 size={24} />
+                              </div>
+                              <h4 className="text-lg font-bold text-slate-900 dark:text-white leading-tight">Xóa sạch toàn bộ dữ liệu</h4>
+                              <p className="text-xs text-slate-400 leading-relaxed">
+                                 Xóa tất cả các bản ghi hiện có (Lớp học, Học sinh, Điểm số, Hóa đơn...) để chuẩn bị cho việc nhập liệu thật. <span className="font-bold text-red-500">Hành động này không thể hoàn tác!</span>
+                              </p>
+                           </div>
+                           <button 
+                              onClick={handleClearData}
+                              disabled={loadingAction !== 'none'}
+                              className="w-full bg-white dark:bg-transparent border-2 border-red-100 dark:border-red-900 text-red-500 py-4 rounded-2xl font-black text-[10px] tracking-widest uppercase hover:bg-red-500 hover:text-white hover:border-red-500 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                           >
+                              {loadingAction === 'clearing' ? 'ĐANG XỬ LÝ...' : (
+                                <>
+                                  <Trash2 size={16} />
+                                  BẮT ĐẦU MỚI (RESET)
+                                </>
+                              )}
+                           </button>
+                        </div>
+                     </div>
 
                     {message && (
                       <div className={cn(
