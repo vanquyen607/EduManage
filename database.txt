@@ -1,7 +1,0 @@
- Vào httpsturso.tech → Sign up (dùng GitHub cho nhanh)
-2. Tạo database Create Database → tên edumanage → chọn region gần nhất (SingaporeJapan)
-3. Sau đó copy Database URL (dạng libsqledumanage-xxx.turso.io) và Auth Token
-
-eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3ODE3Nzg4NjAsImlkIjoiMDE5ZWRhNGItNjAwMS03YmQ5LWE5NjEtMmIzZjgxMzJjNTc4IiwicmlkIjoiOGM2YWE0ZTctYjc1Yi00MGVlLTk0ZWQtN2MzOGEyZDE4OTk2In0.J-6IVg_xTyn-CvL_Y8Q8hL3B5OOY5O_u_uB4JSqKCXk8TfcYVhoaWI-Ziq4-TGljP7kVPLJT-c-DurtucHFwAg
-
-libsql://edumanage-vanquyen.aws-ap-northeast-1.turso.io

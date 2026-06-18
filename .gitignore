@@ -9,3 +9,4 @@ coverage/
 .vercel
 edumanage.db*
 auth*
+database.txt
