@@ -30,8 +30,8 @@ export default function Pagination({ currentPage, totalPages, onPageChange }: Pa
         className={cn(
           "p-2 rounded-xl transition-all border",
           currentPage <= 1
-            ? "border-slate-100 text-slate-300 cursor-not-allowed"
-            : "border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300"
+            ? "border-hairline text-muted-soft cursor-not-allowed"
+            : "border-hairline text-muted hover:bg-accent-light hover:border-hairline"
         )}
       >
         <ChevronLeft size={18} />
@@ -39,7 +39,7 @@ export default function Pagination({ currentPage, totalPages, onPageChange }: Pa
 
       {pages.map((page, idx) => (
         typeof page === 'string' ? (
-          <span key={`ellipsis-${idx}`} className="px-2 text-slate-300 text-sm">...</span>
+          <span key={`ellipsis-${idx}`} className="px-2 text-muted-soft text-sm">...</span>
         ) : (
           <button
             key={page}
@@ -47,8 +47,8 @@ export default function Pagination({ currentPage, totalPages, onPageChange }: Pa
             className={cn(
               "min-w-[40px] h-10 rounded-xl text-xs font-bold transition-all",
               currentPage === page
-                ? "bg-slate-900 text-white shadow-lg"
-                : "text-slate-500 hover:bg-slate-50 border border-transparent hover:border-slate-200"
+                ? "bg-coral text-white shadow-lg"
+                : "text-muted hover:bg-accent-light border border-transparent hover:border-hairline"
             )}
           >
             {page}
@@ -62,14 +62,14 @@ export default function Pagination({ currentPage, totalPages, onPageChange }: Pa
         className={cn(
           "p-2 rounded-xl transition-all border",
           currentPage >= totalPages
-            ? "border-slate-100 text-slate-300 cursor-not-allowed"
-            : "border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300"
+            ? "border-hairline text-muted-soft cursor-not-allowed"
+            : "border-hairline text-muted hover:bg-accent-light hover:border-hairline"
         )}
       >
         <ChevronRight size={18} />
       </button>
 
-      <span className="text-[10px] text-slate-400 ml-2 font-medium">
+      <span className="text-[10px] text-muted ml-2 font-medium">
         {currentPage} / {totalPages}
       </span>
     </div>
@@ -93,4 +93,3 @@ export function usePagination<T>(items: T[], pageSize: number = 10) {
     paginatedItems,
   };
 }
-

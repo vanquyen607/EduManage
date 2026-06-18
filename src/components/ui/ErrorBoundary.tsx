@@ -35,11 +35,11 @@ export default class ErrorBoundary extends React.Component<ErrorBoundaryProps, E
             <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6 border border-red-100">
               <AlertTriangle size={32} className="text-red-500" />
             </div>
-            <h3 className="text-xl font-serif font-bold text-slate-900 mb-2">Đã xảy ra lỗi</h3>
-            <p className="text-sm text-slate-500 mb-6 leading-relaxed">
+            <h3 className="text-xl  font-bold text-ink mb-2">Đã xảy ra lỗi</h3>
+            <p className="text-sm text-muted mb-6 leading-relaxed">
               Ứng dụng gặp sự cố không mong muốn. Vui lòng thử tải lại trang.
             </p>
-            <div className="text-xs text-slate-400 mb-6 p-4 bg-slate-50 rounded-xl border border-slate-100 max-h-24 overflow-y-auto font-mono">
+            <div className="text-xs text-muted mb-6 p-4 bg-accent-light rounded-xl border border-slate-100 max-h-24 overflow-y-auto font-mono">
               {error?.message || 'Lỗi không xác định'}
             </div>
             <button

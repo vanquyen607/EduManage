@@ -111,8 +111,8 @@ export default function ScheduleManager() {
     <div className="max-w-6xl mx-auto space-y-8">
       <header className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-serif font-bold text-slate-900">Thời khóa biểu</h1>
-          <p className="text-slate-500 text-sm mt-1">Lịch học chi tiết theo tuần của các lớp</p>
+          <h1 className="text-3xl  font-bold text-ink">Thời khóa biểu</h1>
+          <p className="text-muted text-sm mt-1">Lịch học chi tiết theo tuần của các lớp</p>
         </div>
       </header>
 
@@ -120,9 +120,9 @@ export default function ScheduleManager() {
       <div className="hidden lg:grid grid-cols-7 gap-4">
         {DAYS.map((day, dayIdx) => (
           <div key={day} className="space-y-4">
-             <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-sm text-center">
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Thứ</p>
-                <p className="text-sm font-bold text-slate-900">{day}</p>
+             <div className="p-4 bg-card rounded-xl border border-hairline shadow-sm text-center">
+                <p className="text-[10px] font-black uppercase tracking-widest text-muted mb-1">Thứ</p>
+                <p className="text-sm font-bold text-ink">{day}</p>
              </div>
              
              <div className="space-y-3">
@@ -130,17 +130,17 @@ export default function ScheduleManager() {
                   <motion.div 
                     layoutId={session.id}
                     key={session.id}
-                    className="p-3 bg-white border border-slate-100 rounded-xl shadow-sm hover:shadow-md transition-all group"
+                    className="p-3 bg-card border border-hairline rounded-xl shadow-sm hover:shadow-md transition-all group"
                   >
                     <div className="flex items-center gap-1.5 mb-1 truncate">
                       <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: session.classColor }} />
-                      <p className="text-[9px] font-black uppercase tracking-tighter text-slate-500">{session.className}</p>
+                      <p className="text-[9px] font-black uppercase tracking-tighter text-muted">{session.className}</p>
                     </div>
-                    <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700 mb-2">
-                       <Clock size={12} className="text-slate-400" />
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-body mb-2">
+                       <Clock size={12} className="text-muted" />
                        {session.startTime} - {session.endTime}
                     </div>
-                    <div className="flex items-center justify-between text-[10px] text-slate-400">
+                    <div className="flex items-center justify-between text-[10px] text-muted">
                        <div className="flex items-center gap-1">
                          <User size={10} />
                          <span className="truncate max-w-[60px]">{session.teacher}</span>
@@ -166,22 +166,22 @@ export default function ScheduleManager() {
           if (sessions.length === 0) return null;
           return (
             <div key={day} className="space-y-3">
-              <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest pl-2">{day}</h3>
+              <h3 className="text-sm font-black text-muted uppercase tracking-widest pl-2">{day}</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {sessions.map((session: any, idx) => (
-                  <div key={idx} className="bg-white p-4 rounded-2xl border border-slate-200 flex items-center justify-between">
+                  <div key={idx} className="bg-card p-4 rounded-xl border border-hairline flex items-center justify-between">
                      <div>
                         <div className="flex items-center gap-2 mb-1">
                           <div className="w-2 h-2 rounded-full" style={{ backgroundColor: session.classColor }} />
-                          <p className="text-xs font-black uppercase tracking-tight text-slate-700">{session.className}</p>
+                          <p className="text-xs font-black uppercase tracking-tight text-body">{session.className}</p>
                         </div>
-                        <div className="flex items-center gap-2 text-sm font-bold text-slate-900">
-                           <Clock size={14} className="text-slate-400" />
+                        <div className="flex items-center gap-2 text-sm font-bold text-ink">
+                           <Clock size={14} className="text-muted" />
                            {session.startTime} - {session.endTime}
                         </div>
                      </div>
                      <div className="text-right">
-                        <p className="text-[10px] text-slate-400 uppercase font-bold">{session.teacher}</p>
+                        <p className="text-[10px] text-muted uppercase font-bold">{session.teacher}</p>
                      </div>
                   </div>
                 ))}
@@ -191,15 +191,15 @@ export default function ScheduleManager() {
         })}
       </div>
 
-      <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm">
+      <div className="bg-card p-8 rounded-xl border border-hairline shadow-sm">
          <div className="flex items-center justify-between mb-6">
             <div>
-               <h3 className="font-serif font-bold text-xl text-slate-900">Thiết lập giờ học</h3>
-               <p className="text-xs text-slate-500 mt-1">Cập nhập lịch học trực tiếp cho từng lớp</p>
+               <h3 className=" font-bold text-xl text-ink">Thiết lập giờ học</h3>
+               <p className="text-xs text-muted mt-1">Cập nhập lịch học trực tiếp cho từng lớp</p>
             </div>
             <button 
               onClick={() => setIsAddModalOpen(true)}
-              className="p-3 bg-slate-900 text-white rounded-xl shadow-lg active:scale-95"
+              className="p-3 bg-coral text-white rounded-xl shadow-lg shadow-coral/20 active:scale-95"
             >
               <Plus size={20} />
             </button>
@@ -211,14 +211,14 @@ export default function ScheduleManager() {
                 <CardSkeleton count={3} />
               </div>
             ) : classes.length === 0 ? (
-              <div className="col-span-full py-20 text-center border-2 border-dashed border-slate-100 rounded-3xl">
-                <CalendarIcon size={32} className="mx-auto mb-3 text-slate-300" />
-                <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Chưa có lớp học nào</p>
+              <div className="col-span-full py-20 text-center border-2 border-dashed border-hairline rounded-xl">
+                <CalendarIcon size={32} className="mx-auto mb-3 text-muted-soft" />
+                <p className="text-[11px] font-black text-muted uppercase tracking-widest">Chưa có lớp học nào</p>
               </div>
             ) : classes.map(cls => (
-              <div key={cls.id} className="p-5 border border-slate-100 bg-slate-50 rounded-2xl hover:bg-white hover:shadow-md transition-all group">
+              <div key={cls.id} className="p-5 border border-hairline bg-accent-light rounded-xl hover:bg-card hover:shadow-md transition-all group">
                 <div className="flex items-center justify-between mb-4">
-                   <p className="font-bold text-slate-900">{cls.name}</p>
+                   <p className="font-bold text-ink">{cls.name}</p>
                    <button 
                     onClick={() => {
                         setSelectedClassId(cls.id);
@@ -231,14 +231,14 @@ export default function ScheduleManager() {
                 </div>
                 <div className="space-y-2">
                    {cls.schedule?.map((s, idx) => (
-                     <div key={idx} className="flex items-center justify-between bg-white px-3 py-2 rounded-lg border border-slate-100">
-                        <span className="text-[11px] font-bold text-slate-600">{DAYS[s.dayOfWeek]}</span>
-                        <span className="text-[11px] font-mono font-black text-slate-900">{s.startTime}-{s.endTime}</span>
-                        <button onClick={() => removeSchedule(cls.id, idx)} className="text-slate-300 hover:text-red-500">
+                     <div key={idx} className="flex items-center justify-between bg-card px-3 py-2 rounded-lg border border-hairline">
+                        <span className="text-[11px] font-bold text-muted">{DAYS[s.dayOfWeek]}</span>
+                        <span className="text-[11px] font-mono font-black text-ink">{s.startTime}-{s.endTime}</span>
+                        <button onClick={() => removeSchedule(cls.id, idx)} className="text-muted-soft hover:text-red-500">
                           <Trash2 size={12} />
                         </button>
                      </div>
-                   )) || <p className="text-[10px] text-slate-400 italic">Chưa có lịch học</p>}
+                   )) || <p className="text-[10px] text-muted italic">Chưa có lịch học</p>}
                 </div>
               </div>
             ))}
@@ -255,14 +255,14 @@ export default function ScheduleManager() {
       >
          <div className="space-y-6">
             {conflictError && (
-              <div className="p-4 bg-red-50 border border-red-100 rounded-2xl">
+              <div className="p-4 bg-red-50 border border-red-100 rounded-xl">
                 <p className="text-xs font-bold text-red-500">{conflictError}</p>
               </div>
             )}
             <div>
-               <label className="text-[11px] font-black uppercase tracking-widest text-slate-400 mb-2 block">Chọn lớp học</label>
+               <label className="text-[11px] font-black uppercase tracking-widest text-muted mb-2 block">Chọn lớp học</label>
                <select 
-                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold"
+                 className="w-full bg-accent-light border border-hairline rounded-xl px-4 py-3 text-sm font-bold"
                  value={selectedClassId || ''}
                  onChange={(e) => {
                    setSelectedClassId(e.target.value);
@@ -276,9 +276,9 @@ export default function ScheduleManager() {
 
             <div className="grid grid-cols-2 gap-4">
                <div>
-                  <label className="text-[11px] font-black uppercase tracking-widest text-slate-400 mb-2 block">Thứ trong tuần</label>
+                  <label className="text-[11px] font-black uppercase tracking-widest text-muted mb-2 block">Thứ trong tuần</label>
                   <select 
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold"
+                    className="w-full bg-accent-light border border-hairline rounded-xl px-4 py-3 text-sm font-bold"
                     value={newSchedule.dayOfWeek}
                     onChange={(e) => {
                       setNewSchedule({ ...newSchedule, dayOfWeek: Number(e.target.value) });
@@ -289,11 +289,11 @@ export default function ScheduleManager() {
                   </select>
                </div>
                <div>
-                  <label className="text-[11px] font-black uppercase tracking-widest text-slate-400 mb-2 block">Giáo viên (Tùy chọn)</label>
+                  <label className="text-[11px] font-black uppercase tracking-widest text-muted mb-2 block">Giáo viên (Tùy chọn)</label>
                   <input 
                     type="text" 
                     placeholder="Tên giáo viên..." 
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm"
+                    className="w-full bg-accent-light border border-hairline rounded-xl px-4 py-3 text-sm"
                     value={newSchedule.teacher || ''}
                     onChange={(e) => setNewSchedule({ ...newSchedule, teacher: e.target.value })}
                   />
@@ -302,10 +302,10 @@ export default function ScheduleManager() {
 
             <div className="grid grid-cols-2 gap-4">
                <div>
-                  <label className="text-[11px] font-black uppercase tracking-widest text-slate-400 mb-2 block">Giờ bắt đầu</label>
+                  <label className="text-[11px] font-black uppercase tracking-widest text-muted mb-2 block">Giờ bắt đầu</label>
                   <input 
                     type="time" 
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm"
+                    className="w-full bg-accent-light border border-hairline rounded-xl px-4 py-3 text-sm"
                     value={newSchedule.startTime}
                     onChange={(e) => {
                       setNewSchedule({ ...newSchedule, startTime: e.target.value });
@@ -314,10 +314,10 @@ export default function ScheduleManager() {
                   />
                </div>
                <div>
-                  <label className="text-[11px] font-black uppercase tracking-widest text-slate-400 mb-2 block">Giờ kết thúc</label>
+                  <label className="text-[11px] font-black uppercase tracking-widest text-muted mb-2 block">Giờ kết thúc</label>
                   <input 
                     type="time" 
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm"
+                    className="w-full bg-accent-light border border-hairline rounded-xl px-4 py-3 text-sm"
                     value={newSchedule.endTime}
                     onChange={(e) => {
                       setNewSchedule({ ...newSchedule, endTime: e.target.value });
@@ -333,13 +333,13 @@ export default function ScheduleManager() {
                    setIsAddModalOpen(false);
                    setConflictError(null);
                  }}
-                 className="flex-1 py-4 bg-slate-100 text-slate-700 rounded-2xl text-[10px] font-black tracking-widest uppercase"
+                 className="flex-1 py-4 bg-card border border-hairline text-muted rounded-xl text-[10px] font-semibold tracking-wider uppercase hover:bg-accent-light transition-all"
                >
                  Hủy
                </button>
                <button 
                  onClick={addScheduleToClass}
-                 className="flex-1 py-4 bg-slate-900 text-white rounded-2xl text-[10px] font-black tracking-widest uppercase shadow-lg shadow-slate-200"
+                  className="flex-1 py-4 bg-coral text-white rounded-xl text-[10px] font-black tracking-widest uppercase shadow-lg shadow-coral/20"
                >
                  Xác nhận thêm
                </button>

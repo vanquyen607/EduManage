@@ -37,18 +37,18 @@ export default function ClassList() {
 
   return (
     <div className="space-y-10 pb-10">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-slate-200 pb-8">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-hairline pb-8">
         <div>
           <div className="flex items-center gap-2 mb-1">
              <div className="h-px w-8 bg-accent" />
              <p className="text-[10px] font-black tracking-[0.2em] text-accent uppercase">Chương trình đào tạo</p>
           </div>
-          <h2 className="text-4xl font-serif font-bold text-slate-900 tracking-tight">Quản lý Lớp học</h2>
-          <p className="text-slate-500 text-sm mt-1">Thiết lập danh mục lớp và mức học phí chi tiết.</p>
+          <h2 className="text-4xl  font-bold text-ink tracking-tight">Quản lý Lớp học</h2>
+          <p className="text-muted text-sm mt-1">Thiết lập danh mục lớp và mức học phí chi tiết.</p>
         </div>
         <button 
           onClick={() => { setSelectedClass(undefined); setIsModalOpen(true); }}
-          className="bg-slate-900 text-white px-6 py-3 rounded-xl text-[10px] font-black tracking-widest uppercase flex items-center gap-2 shadow-lg shadow-slate-200 hover:bg-slate-800 transition-all active:scale-95"
+          className="bg-coral text-white px-6 py-3 rounded-xl text-[10px] font-black tracking-widest uppercase flex items-center gap-2 shadow-lg shadow-coral/20 hover:bg-coral-active transition-all active:scale-95"
          motion-layout="true"
         >
           <Plus size={14} />
@@ -59,43 +59,43 @@ export default function ClassList() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {isLoading ? (
           [...Array(3)].map((_, i) => (
-            <div key={i} className="h-64 bg-slate-50 border border-slate-100 rounded-3xl animate-pulse" />
+            <div key={i} className="h-64 bg-accent-light border border-hairline rounded-xl animate-pulse" />
           ))
         ) : classes.map((cls) => (
-          <div key={cls.id} className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group">
-            <div className="h-1.5 w-full bg-slate-100" style={{ backgroundColor: cls.color || '#3b82f6' }} />
+          <div key={cls.id} className="bg-card rounded-xl border border-hairline shadow-sm overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group">
+            <div className="h-1.5 w-full bg-hairline/50" style={{ backgroundColor: cls.color || '#3b82f6' }} />
             <div className="p-8">
               <div className="flex justify-between items-start mb-6">
-                <div className="p-3.5 bg-slate-900 text-white rounded-2xl shadow-lg shadow-slate-200">
+                <div className="p-3.5 bg-surface-dark text-white rounded-xl shadow-lg">
                   <GraduationCap size={24} />
                 </div>
                 <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
                   <button 
                     onClick={() => { setSelectedClass(cls); setIsModalOpen(true); }} 
-                    className="p-2 text-slate-400 hover:text-primary hover:bg-slate-50 rounded-xl transition-all"
+                    className="p-2 text-muted hover:text-coral hover:bg-accent-light rounded-xl transition-all"
                   >
                     <Edit2 size={16} />
                   </button>
                   <button 
                     onClick={() => handleDelete(cls.id)} 
-                    className="p-2 text-slate-400 hover:text-red-500 hover:bg-slate-50 rounded-xl transition-all"
+                    className="p-2 text-muted hover:text-red-500 hover:bg-accent-light rounded-xl transition-all"
                   >
                     <Trash2 size={16} />
                   </button>
                 </div>
               </div>
-              <h3 className="font-serif text-2xl font-bold text-slate-900 mb-2 truncate group-hover:text-primary transition-colors">{cls.name}</h3>
-              <p className="text-slate-400 text-xs font-medium leading-relaxed mb-6 line-clamp-2 italic">"{cls.description || 'Không có mô tả chi tiết.'}"</p>
+              <h3 className=" text-2xl font-bold text-ink mb-2 truncate group-hover:text-coral transition-colors">{cls.name}</h3>
+              <p className="text-muted text-xs font-medium leading-relaxed mb-6 line-clamp-2 italic">"{cls.description || 'Không có mô tả chi tiết.'}"</p>
               
-              <div className="pt-6 border-t border-slate-50 flex items-center justify-between">
+              <div className="pt-6 border-t border-hairline flex items-center justify-between">
                 <div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Mức học phí</p>
+                  <p className="text-[10px] font-black text-muted uppercase tracking-widest mb-1">Mức học phí</p>
                   <div className="flex items-baseline gap-1">
-                    <span className="text-xl font-bold text-slate-900">{formatCurrency(cls.feePerSession)}</span>
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">/ BUỔI</span>
+                    <span className="text-xl font-bold text-ink">{formatCurrency(cls.feePerSession)}</span>
+                    <span className="text-[10px] font-black text-muted uppercase tracking-tighter">/ BUỔI</span>
                   </div>
                 </div>
-                <div className="w-8 h-8 rounded-full border border-slate-100 flex items-center justify-center text-slate-300 group-hover:bg-primary group-hover:text-white transition-all transform group-hover:rotate-45">
+                <div className="w-8 h-8 rounded-full border border-hairline flex items-center justify-center text-muted-soft group-hover:bg-coral group-hover:text-white transition-all transform group-hover:rotate-45">
                    <Plus size={14} />
                 </div>
               </div>
@@ -103,11 +103,11 @@ export default function ClassList() {
           </div>
         ))}
         {classes.length === 0 && !isLoading && (
-          <div className="col-span-full py-20 text-center border-2 border-dashed border-slate-100 rounded-3xl">
-             <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100 text-slate-300">
+          <div className="col-span-full py-20 text-center border-2 border-dashed border-hairline rounded-xl">
+             <div className="w-16 h-16 bg-accent-light rounded-full flex items-center justify-center mx-auto mb-4 border border-hairline text-muted-soft">
                <GraduationCap size={24} />
              </div>
-             <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Chưa có chương trình đào tạo nào</p>
+             <p className="text-[11px] font-black text-muted uppercase tracking-widest">Chưa có chương trình đào tạo nào</p>
           </div>
         )}
       </div>

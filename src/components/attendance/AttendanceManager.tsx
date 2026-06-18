@@ -104,14 +104,14 @@ export default function AttendanceManager() {
 
   return (
     <div className="space-y-10 pb-10">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-slate-200 pb-8">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-hairline pb-8">
         <div>
           <div className="flex items-center gap-2 mb-1">
              <div className="h-px w-8 bg-accent" />
              <p className="text-[10px] font-black tracking-[0.2em] text-accent uppercase">Điểm danh hàng ngày</p>
           </div>
-          <h2 className="text-4xl font-serif font-bold text-slate-900 tracking-tight">Ghi nhận Chuyên cần</h2>
-          <p className="text-slate-500 text-sm mt-1">Ghi nhận sự hiện diện để tính học phí thực tế cho học viên.</p>
+          <h2 className="text-4xl  font-bold text-ink tracking-tight">Ghi nhận Chuyên cần</h2>
+          <p className="text-muted text-sm mt-1">Ghi nhận sự hiện diện để tính học phí thực tế cho học viên.</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
            <button 
@@ -122,15 +122,15 @@ export default function AttendanceManager() {
                classStudents.forEach(s => nextData[s.id] = nextStatus);
                setAttendanceData(nextData);
              }}
-             className="px-6 py-2.5 bg-white border border-slate-200 text-slate-900 rounded-xl text-[10px] font-black tracking-widest uppercase hover:border-slate-900 transition-all active:scale-95 shadow-sm"
+             className="px-6 py-2.5 bg-card border border-hairline text-ink rounded-xl text-[10px] font-semibold uppercase tracking-wider hover:border-slate-900 transition-all active:scale-95 shadow-sm"
            >
               CHỌN TẤT CẢ ({classStudents.every(s => (attendanceData[s.id] || AttendanceStatus.PRESENT) === AttendanceStatus.PRESENT) ? 'VẮNG' : 'CÓ MẶT'})
            </button>
-           <div className="flex items-center gap-2 px-3 py-2 bg-white rounded-xl border border-slate-200">
-             <CalendarIcon size={14} className="text-slate-400" />
+           <div className="flex items-center gap-2 px-3 py-2 bg-card rounded-xl border border-hairline">
+             <CalendarIcon size={14} className="text-muted" />
              <input 
                type="date"
-               className="bg-transparent border-none outline-none text-[11px] font-black tracking-widest uppercase cursor-pointer"
+               className="bg-transparent border-none outline-none text-[11px] font-semibold uppercase tracking-wider cursor-pointer"
                value={selectedDate}
                onChange={(e) => setSelectedDate(e.target.value)}
              />
@@ -138,7 +138,7 @@ export default function AttendanceManager() {
            <button 
              onClick={handleSave}
              disabled={isSaving}
-             className="bg-slate-900 text-white px-6 py-2.5 rounded-xl text-[10px] font-black tracking-widest uppercase flex items-center gap-2 hover:bg-slate-800 transition-all disabled:opacity-50 shadow-lg shadow-slate-200"
+              className="bg-coral text-white px-6 py-2.5 rounded-xl text-[10px] font-semibold uppercase tracking-wider flex items-center gap-2 hover:bg-coral-active transition-all disabled:opacity-50 shadow-lg shadow-coral/20"
            >
              {isSaving ? <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Save size={14} />}
              LƯU DỮ LIỆU
@@ -146,14 +146,14 @@ export default function AttendanceManager() {
         </div>
       </div>
 
-      <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm flex items-center gap-6">
-         <div className="p-4 bg-slate-900 text-white rounded-2xl shadow-xl shadow-slate-100">
+      <div className="bg-card p-8 rounded-xl border border-hairline shadow-sm flex items-center gap-6">
+         <div className="p-4 bg-surface-dark text-white rounded-xl shadow-xl">
             <Users size={24} />
          </div>
          <div className="flex-1">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Chọn lớp đào tạo</p>
+            <p className="text-[10px] font-black text-muted uppercase tracking-widest mb-1">Chọn lớp đào tạo</p>
             <select 
-              className="w-full bg-transparent outline-none font-serif text-2xl font-bold text-slate-900 cursor-pointer appearance-none"
+              className="w-full bg-transparent outline-none  text-2xl font-bold text-ink cursor-pointer appearance-none"
               value={selectedClass}
               onChange={(e) => setSelectedClass(e.target.value)}
             >
@@ -162,8 +162,8 @@ export default function AttendanceManager() {
               ))}
             </select>
             <div className="flex items-center gap-2 mt-1">
-               <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-               <p className="text-[10px] font-black text-slate-500 uppercase tracking-tighter">{classStudents.length} học sinh đang theo học</p>
+               <div className="w-1.5 h-1.5 rounded-full bg-accent-teal" />
+               <p className="text-[10px] font-black text-muted uppercase tracking-tighter">{classStudents.length} học sinh đang theo học</p>
             </div>
          </div>
       </div>
@@ -182,24 +182,24 @@ export default function AttendanceManager() {
               className={cn(
                 "p-6 rounded-[2.5rem] border transition-all duration-500 cursor-pointer flex items-center justify-between group relative overflow-hidden",
                 status === AttendanceStatus.PRESENT 
-                  ? "bg-white border-slate-100 hover:border-slate-900 hover:shadow-2xl hover:-translate-y-1" 
+                  ? "bg-card border-hairline hover:border-slate-900 hover:shadow-2xl hover:-translate-y-1" 
                   : "bg-red-50/50 border-red-100 shadow-inner"
               )}
             >
               <div className="flex items-center gap-4">
                 <div className={cn(
-                  "w-14 h-14 rounded-2xl flex items-center justify-center font-serif text-xl font-bold transition-all duration-500 shadow-xl",
-                  status === AttendanceStatus.PRESENT ? "bg-slate-900 text-white group-hover:scale-110" : "bg-red-500 text-white"
+                  "w-14 h-14 rounded-xl flex items-center justify-center  text-xl font-bold transition-all duration-500 shadow-xl",
+                  status === AttendanceStatus.PRESENT ? "bg-surface-dark text-white group-hover:scale-110" : "bg-red-500 text-white"
                 )}>
                   {student.name.charAt(0)}
                 </div>
                 <div>
-                  <p className={cn("font-bold text-slate-900 text-base transition-colors", status === AttendanceStatus.ABSENT && "text-red-700")}>
+                  <p className={cn("font-bold text-ink text-base transition-colors", status === AttendanceStatus.ABSENT && "text-red-700")}>
                     {student.name}
                   </p>
                   <p className={cn(
                     "text-[10px] font-black uppercase tracking-widest mt-1",
-                    status === AttendanceStatus.PRESENT ? "text-slate-400" : "text-red-400"
+                    status === AttendanceStatus.PRESENT ? "text-muted" : "text-red-400"
                   )}>
                     {status === AttendanceStatus.PRESENT ? 'PRESENT' : 'ABSENT'}
                   </p>
@@ -207,9 +207,9 @@ export default function AttendanceManager() {
               </div>
               
               <div className={cn(
-                "w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-500 border-2",
+                "w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-500 border-2",
                 status === AttendanceStatus.PRESENT 
-                  ? "bg-white border-slate-100 text-slate-200 group-hover:border-emerald-500 group-hover:bg-emerald-500 group-hover:text-white group-hover:rotate-12" 
+                  ? "bg-card border-hairline text-muted-soft group-hover:border-accent-teal group-hover:bg-accent-teal group-hover:text-white group-hover:rotate-12" 
                   : "bg-red-500 border-red-500 text-white shadow-lg shadow-red-200"
               )}>
                 {status === AttendanceStatus.PRESENT ? <Check size={20} /> : <X size={20} />}

@@ -124,7 +124,7 @@ export async function initDb() {
       short_name TEXT
     )
   `);
-  console.log('Database tables initialized');
+  console.log('Database tables verified (IF NOT EXISTS)');
 }
 
 function sanitize(params?: any[]) {

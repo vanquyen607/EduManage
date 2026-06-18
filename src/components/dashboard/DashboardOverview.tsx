@@ -199,49 +199,39 @@ export default function DashboardOverview() {
   const paidRatio = totalInvoices > 0 ? Math.round((paidInvoices / totalInvoices) * 100) : 0;
 
   const statCards = [
-    { label: 'TỔNG HỌC SINH', value: stats.totalStudents, icon: Users, color: 'bg-slate-900', trend: `${activeStudents} ĐANG HỌC`, sub: `${stats.totalStudents - activeStudents} inactive` },
-    { label: 'LỚP ĐÀO TẠO', value: stats.activeClasses, icon: GraduationCap, color: 'bg-slate-900', trend: 'ĐANG HOẠT ĐỘNG', sub: 'Chương trình chạy' },
-    { label: 'HÓA ĐƠN CHỜ', value: stats.pendingInvoices, icon: AlertCircle, color: 'bg-red-500', trend: stats.pendingInvoices > 0 ? 'CẦN XỬ LÝ' : 'XONG', sub: 'Chưa thu tiền' },
-    { label: 'DOANH THU TỔNG', value: formatCurrency(totalRevenue), icon: DollarSign, color: 'bg-accent', trend: `ĐÃ THU ${paidRatio}%`, sub: 'Dòng tiền hệ thống' },
+    { label: 'TỔNG HỌC SINH', value: stats.totalStudents, icon: Users, color: 'bg-coral', trend: `${activeStudents} ĐANG HỌC` },
+    { label: 'LỚP ĐÀO TẠO', value: stats.activeClasses, icon: GraduationCap, color: 'bg-coral', trend: 'ĐANG HOẠT ĐỘNG' },
+    { label: 'HÓA ĐƠN CHỜ', value: stats.pendingInvoices, icon: AlertCircle, color: 'bg-accent-amber', trend: stats.pendingInvoices > 0 ? 'CẦN XỬ LÝ' : 'XONG' },
+    { label: 'DOANH THU TỔNG', value: formatCurrency(totalRevenue), icon: DollarSign, color: 'bg-accent-amber', trend: `ĐÃ THU ${paidRatio}%` },
   ];
 
   const pendingInvoicesList = invoices.filter(i => i.status === InvoiceStatus.PENDING).slice(0, 3);
   const recentStudents = students.slice(0, 3);
 
   const quickActions = [
-    { label: 'ĐIỂM DANH', icon: CalendarIcon, action: () => { window.dispatchEvent(new CustomEvent('changeTab', { detail: 'attendance' })); }, color: 'bg-blue-50 text-blue-600' },
-    { label: 'THU HỌC PHÍ', icon: DollarSign, action: () => { window.dispatchEvent(new CustomEvent('changeTab', { detail: 'billing' })); }, color: 'bg-emerald-50 text-emerald-600' },
-    { label: 'NHẬP ĐIỂM', icon: Star, action: () => { window.dispatchEvent(new CustomEvent('changeTab', { detail: 'grades' })); }, color: 'bg-amber-50 text-amber-600' },
-    { label: 'LỊCH HỌC', icon: Clock, action: () => { window.dispatchEvent(new CustomEvent('changeTab', { detail: 'schedule' })); }, color: 'bg-purple-50 text-purple-600' },
+    { label: 'ĐIỂM DANH', icon: CalendarIcon, action: () => { window.dispatchEvent(new CustomEvent('changeTab', { detail: 'attendance' })); }, color: 'bg-coral/10 text-coral' },
+    { label: 'THU HỌC PHÍ', icon: DollarSign, action: () => { window.dispatchEvent(new CustomEvent('changeTab', { detail: 'billing' })); }, color: 'bg-coral/10 text-coral' },
+    { label: 'NHẬP ĐIỂM', icon: Star, action: () => { window.dispatchEvent(new CustomEvent('changeTab', { detail: 'grades' })); }, color: 'bg-accent-amber/20 text-accent-amber' },
+    { label: 'LỊCH HỌC', icon: Clock, action: () => { window.dispatchEvent(new CustomEvent('changeTab', { detail: 'schedule' })); }, color: 'bg-accent-teal/20 text-accent-teal' },
   ];
 
   return (
-    <div className="space-y-12 pb-10">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-slate-200 pb-10">
+    <div className="space-y-6 md:space-y-8">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-4 md:pb-6">
         <div>
           <div className="flex items-center gap-2 mb-2">
-             <div className="h-0.5 w-6 bg-accent" />
-             <p className="text-[10px] font-black tracking-[0.3em] text-accent uppercase">Mission Control</p>
+             <div className="h-0.5 w-6 bg-accent-amber rounded-full" />
+             <p className="text-[10px] font-semibold tracking-wider text-accent-amber uppercase">Dashboard</p>
           </div>
-          <h2 className="text-4xl md:text-5xl font-serif font-bold text-slate-900 tracking-tight leading-none italic">
-            Dashboard <span className="text-slate-300 font-light not-italic">Overview</span>
-          </h2>
-          <p className="text-slate-400 text-sm mt-3 font-medium">Xin chào, Quản trị viên. Hệ thống đang vận hành tốt.</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-ink tracking-tight">
+            Tổng quan hệ thống
+          </h1>
+          <p className="text-sm text-muted mt-1">Xin chào, Quản trị viên. Hệ thống đang vận hành tốt.</p>
         </div>
         <div className="flex items-center gap-3">
-           <div className="flex -space-x-3 mr-4">
-              {recentStudents.map((s, i) => (
-                <div key={i} className="w-10 h-10 rounded-2xl border-4 border-white bg-slate-900 text-white flex items-center justify-center text-xs font-bold shadow-lg">
-                  {s.name.charAt(0)}
-                </div>
-              ))}
-              <div className="w-10 h-10 rounded-2xl border-4 border-white bg-slate-100 flex items-center justify-center text-[10px] font-black text-slate-400 shadow-lg">
-                +{stats.totalStudents}
-              </div>
-           </div>
            <button 
              onClick={() => { setSelectedNotif(undefined); setIsNotifModalOpen(true); }}
-             className="px-8 py-4 bg-slate-900 text-white rounded-2xl text-[10px] font-black tracking-[0.2em] uppercase hover:bg-accent hover:shadow-[0_20px_40px_rgba(194,65,12,0.2)] hover:-translate-y-1 transition-all shadow-xl shadow-slate-200 active:scale-95"
+             className="inline-flex items-center gap-2 px-5 py-2.5 bg-coral text-white text-sm font-medium rounded-xl hover:bg-coral-active transition-all active:scale-95"
            >
              POST ANNOUNCEMENT
            </button>
@@ -249,7 +239,7 @@ export default function DashboardOverview() {
       </div>
 
       {/* Quick Actions Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {quickActions.map((action, i) => (
           <motion.button
             key={i}
@@ -257,27 +247,24 @@ export default function DashboardOverview() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 * i }}
             onClick={action.action}
-            className={cn(
-              "flex items-center gap-4 p-4 rounded-3xl border border-slate-100 transition-all hover:border-slate-900 hover:shadow-xl group",
-              action.color
-            )}
+            className="flex items-center gap-3 p-4 bg-card rounded-xl hover:shadow-md hover:-translate-y-0.5 transition-all group"
           >
-            <div className="p-3 rounded-2xl bg-white shadow-sm group-hover:scale-110 transition-transform">
-              <action.icon size={20} />
+            <div className={cn("p-2.5 rounded-lg", action.color)}>
+              <action.icon size={18} />
             </div>
-            <span className="text-[10px] font-black tracking-widest text-slate-900">{action.label}</span>
+            <span className="text-xs font-semibold text-body">{action.label}</span>
           </motion.button>
         ))}
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         {isLoading ? (
           Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="bg-white p-6 md:p-8 rounded-[2rem] border border-slate-200 animate-pulse">
-              <div className="w-14 h-14 bg-slate-100 rounded-2xl mb-8" />
-              <div className="h-3 bg-slate-100 rounded w-1/2 mb-3" />
-              <div className="h-8 bg-slate-100 rounded w-3/4 mb-3" />
-              <div className="h-5 bg-slate-50 rounded w-16" />
+            <div key={i} className="bg-card p-6 rounded-xl border border-hairline animate-pulse">
+              <div className="w-12 h-12 bg-hairline/50 rounded-xl mb-6" />
+              <div className="h-3 bg-hairline/50 rounded w-1/2 mb-2" />
+              <div className="h-7 bg-hairline/50 rounded w-3/4 mb-2" />
+              <div className="h-4 bg-accent-light rounded w-16" />
             </div>
           ))
         ) : statCards.map((stat, i) => (
@@ -286,113 +273,112 @@ export default function DashboardOverview() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.05, duration: 0.6, ease: [0.23, 1, 0.32, 1] }}
-            className="group bg-card-bg p-6 md:p-8 rounded-[2rem] border border-border-main shadow-sm hover:shadow-[0_20px_50px_rgba(0,0,0,0.05)] hover:-translate-y-1 transition-all duration-500 relative overflow-hidden"
+            className="bg-card rounded-xl p-6 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 relative overflow-hidden"
           >
-            <div className={cn("absolute -top-12 -right-12 w-32 h-32 transform opacity-5 group-hover:opacity-10 group-hover:scale-110 transition-all duration-700 rounded-full blur-2xl", stat.color)} />
-            <div className="flex items-start justify-between mb-8">
-              <div className={cn("p-4 rounded-2xl text-white shadow-lg shadow-slate-100 group-hover:scale-110 transition-transform duration-500", stat.color)}>
-                <stat.icon size={22} />
+            <div className={cn("absolute -top-12 -right-12 w-32 h-32 opacity-5 rounded-full blur-2xl", stat.color)} />
+            <div className="flex items-center justify-between mb-6">
+              <div className={cn("p-3 rounded-xl text-white shadow-sm", stat.color)}>
+                <stat.icon size={20} />
               </div>
             </div>
             <div>
-              <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-2 transition-colors group-hover:text-slate-500">{stat.label}</p>
-              <p className="text-xl md:text-3xl font-serif font-bold text-slate-900 leading-none truncate">{stat.value}</p>
-              <div className="flex items-center gap-2 mt-4">
+              <p className="text-xs font-medium text-muted mb-1">{stat.label}</p>
+              <p className="text-2xl font-bold text-ink leading-none truncate">{stat.value}</p>
+              <div className="flex items-center gap-2 mt-3">
                 <span className={cn(
-                  "text-[10px] font-black px-2 py-1 rounded-lg uppercase tracking-tighter",
-                  stat.trend.startsWith('+') ? "bg-emerald-50 text-emerald-600" : "bg-slate-50 text-slate-600"
+                  "text-[10px] font-semibold px-2 py-0.5 rounded-md",
+                  stat.trend === 'ĐANG HOẠT ĐỘNG' || stat.trend === 'XONG' ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400" : "bg-hairline/50 text-muted dark:bg-card dark:text-muted"
                 )}>
                   {stat.trend}
                 </span>
-                <span className="text-[9px] font-bold text-slate-300 uppercase tracking-widest group-hover:text-slate-400 transition-colors">vs tháng trước</span>
               </div>
             </div>
           </motion.div>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-6 md:space-y-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+        <div className="lg:col-span-2 space-y-4 md:space-y-6">
           <motion.div 
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-card-bg p-8 rounded-[2rem] border border-border-main shadow-sm"
+            className="bg-card rounded-xl p-6"
           >
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
               <div>
-                <p className="text-[10px] font-black text-accent uppercase tracking-widest mb-1">Dữ liệu tài chính</p>
-                <h3 className="font-serif font-bold text-2xl text-slate-900">
+                <p className="text-xs font-medium text-muted mb-0.5">Dữ liệu tài chính</p>
+                <h3 className="text-lg font-bold text-ink">
                   {activeChart === 'month' ? 'Doanh thu theo tháng' : 'Doanh thu theo lớp'}
                 </h3>
               </div>
-              <div className="flex items-center gap-1 p-1 bg-slate-50 rounded-xl">
+              <div className="flex items-center gap-1 p-0.5 bg-hairline/50 dark:bg-card rounded-lg">
                  <button 
                   onClick={() => setActiveChart('month')}
                   className={cn(
-                    "px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
-                    activeChart === 'month' ? "bg-white shadow-sm text-slate-900" : "text-slate-400 hover:text-slate-600"
+                    "px-3 py-1.5 rounded-md text-xs font-medium transition-all",
+                    activeChart === 'month' ? "bg-card shadow-sm text-ink" : "text-muted hover:text-body"
                   )}
                  >
-                   THEO THÁNG
+                   Theo tháng
                  </button>
                  <button 
                   onClick={() => setActiveChart('class')}
                   className={cn(
-                    "px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
-                    activeChart === 'class' ? "bg-white shadow-sm text-slate-900" : "text-slate-400 hover:text-slate-600"
+                    "px-3 py-1.5 rounded-md text-xs font-medium transition-all",
+                    activeChart === 'class' ? "bg-card shadow-sm text-ink" : "text-muted hover:text-body"
                   )}
                  >
-                   THEO LỚP
+                   Theo lớp
                  </button>
               </div>
             </div>
-            <div className="h-[320px] -ml-4">
-              <ResponsiveContainer width="100%" height={320} minHeight={320}>
+            <div className="h-[280px] -ml-4">
+              <ResponsiveContainer width="100%" height={280} minHeight={280}>
                 {activeChart === 'month' ? (
                   <AreaChart data={revenueByMonth}>
                     <defs>
                       <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#0f172a" stopOpacity={0.1}/>
-                        <stop offset="95%" stopColor="#0f172a" stopOpacity={0}/>
+                        <stop offset="5%" stopColor="#cc785c" stopOpacity={0.15}/>
+                        <stop offset="95%" stopColor="#cc785c" stopOpacity={0}/>
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e6dfd8" />
                     <XAxis 
                       dataKey="name" 
                       axisLine={false} 
                       tickLine={false} 
-                      tick={{ fontSize: 10, fill: '#94a3b8', fontWeight: 600 }} 
+                      tick={{ fontSize: 10, fill: '#6c6a64', fontWeight: 500 }} 
                       dy={10}
                     />
                     <YAxis 
                       axisLine={false} 
                       tickLine={false} 
-                      tick={{ fontSize: 10, fill: '#94a3b8', fontWeight: 600 }} 
+                      tick={{ fontSize: 10, fill: '#6c6a64', fontWeight: 500 }} 
                       tickFormatter={(value) => `${value / 1000000}M`}
                     />
                     <Tooltip 
                       formatter={(value: number) => formatCurrency(value)}
-                      contentStyle={{ backgroundColor: '#1e293b', borderRadius: '12px', border: 'none', color: '#fff' }}
-                      itemStyle={{ color: '#fff', fontSize: '11px', fontWeight: 'bold', textTransform: 'uppercase' }}
+                      contentStyle={{ backgroundColor: '#252320', borderRadius: '12px', border: 'none', color: '#faf9f5' }}
+                      itemStyle={{ color: '#faf9f5', fontSize: '11px', fontWeight: '600' }}
                       labelStyle={{ display: 'none' }}
                     />
                     <Area 
                       type="monotone" 
                       dataKey="value" 
-                      stroke="#0f172a" 
-                      strokeWidth={3}
+                      stroke="#cc785c" 
+                      strokeWidth={2}
                       fillOpacity={1} 
                       fill="url(#colorValue)" 
                     />
                   </AreaChart>
                 ) : (
                   <BarChart data={revenueByClass} layout="vertical">
-                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
+                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#e6dfd8" />
                     <XAxis 
                       type="number"
                       axisLine={false} 
                       tickLine={false} 
-                      tick={{ fontSize: 10, fill: '#94a3b8', fontWeight: 600 }} 
+                      tick={{ fontSize: 10, fill: '#6c6a64', fontWeight: 500 }} 
                       tickFormatter={(value) => `${value / 1000000}M`}
                     />
                     <YAxis 
@@ -401,15 +387,15 @@ export default function DashboardOverview() {
                       axisLine={false} 
                       tickLine={false} 
                       width={100}
-                      tick={{ fontSize: 10, fill: '#94a3b8', fontWeight: 600 }} 
+                      tick={{ fontSize: 10, fill: '#6c6a64', fontWeight: 500 }} 
                     />
                     <Tooltip 
                       formatter={(value: number) => formatCurrency(value)}
-                      contentStyle={{ backgroundColor: '#1e293b', borderRadius: '12px', border: 'none', color: '#fff' }}
-                      itemStyle={{ color: '#fff', fontSize: '11px', fontWeight: 'bold', textTransform: 'uppercase' }}
+                      contentStyle={{ backgroundColor: '#252320', borderRadius: '12px', border: 'none', color: '#faf9f5' }}
+                      itemStyle={{ color: '#faf9f5', fontSize: '11px', fontWeight: '600' }}
                       labelStyle={{ display: 'none' }}
                     />
-                    <Bar dataKey="value" fill="#c2410c" radius={[0, 8, 8, 0]} barSize={24} />
+                    <Bar dataKey="value" fill="#cc785c" radius={[0, 6, 6, 0]} barSize={20} />
                   </BarChart>
                 )}
               </ResponsiveContainer>
@@ -419,13 +405,13 @@ export default function DashboardOverview() {
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm"
+            className="bg-card rounded-xl p-6"
           >
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="font-serif font-bold text-xl text-slate-900">Hóa đơn chờ xử lý</h3>
-              <DollarSign size={18} className="text-emerald-600" />
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-base font-bold text-ink">Hóa đơn chờ xử lý</h3>
+              <DollarSign size={16} className="text-emerald-500" />
             </div>
-            <div className="space-y-4">
+            <div className="space-y-3">
               {pendingInvoicesList.length > 0 ? pendingInvoicesList.map((inv, idx) => {
                 const student = students.find(s => s.id === inv.studentId);
                 return (
@@ -434,32 +420,32 @@ export default function DashboardOverview() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.3 + (idx * 0.1) }}
-                    className="flex items-center justify-between p-4 bg-slate-50 border border-slate-100 rounded-2xl hover:bg-white hover:shadow-md transition-all group"
+                    className="flex items-center justify-between p-3.5 bg-accent-light dark:bg-card/50 rounded-xl hover:bg-card dark:hover:bg-card hover:shadow-sm transition-all group"
                   >
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-black text-slate-400 uppercase tracking-tighter mb-0.5">#{inv.month}</p>
-                      <p className="text-sm font-bold text-slate-900 truncate">{student?.name || 'Học sinh ẩn'}</p>
-                      <p className="text-xs font-mono text-slate-500 mt-1">{formatCurrency(inv.totalAmount)}</p>
+                      <p className="text-xs font-medium text-muted mb-0.5">#{inv.month}</p>
+                      <p className="text-sm font-semibold text-ink truncate">{student?.name || 'Học sinh ẩn'}</p>
+                      <p className="text-xs text-muted mt-0.5">{formatCurrency(inv.totalAmount)}</p>
                     </div>
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                    <div className="flex items-center gap-1">
                       <button 
                         type="button"
                         onClick={(e) => showPaymentInfo(e, inv)}
-                        className="p-2 text-primary hover:bg-blue-50 rounded-xl transition-all"
+                        className="p-2 text-muted hover:text-coral hover:bg-accent-light dark:hover:bg-coral/20 rounded-lg transition-all"
                       >
-                        <QrCode size={16} />
+                        <QrCode size={15} />
                       </button>
                       <button 
                         type="button"
                         onClick={(e) => { e.stopPropagation(); handleProcessInvoice(inv.id); }}
-                        className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all"
+                        className="p-2 text-muted hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 rounded-lg transition-all"
                       >
-                        <CheckCircle2 size={16} />
+                        <CheckCircle2 size={15} />
                       </button>
                     </div>
                   </motion.div>
                 );
-              }) : <div className="text-center py-6 text-slate-400 text-xs italic">Tất cả đã thanh toán</div>}
+              }) : <div className="text-center py-6 text-muted text-sm">Tất cả đã thanh toán</div>}
             </div>
           </motion.div>
         </div>
@@ -467,20 +453,17 @@ export default function DashboardOverview() {
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm h-fit relative overflow-hidden"
+          className="bg-card rounded-xl p-6 h-fit"
         >
-          <div className="absolute top-0 right-0 p-4 opacity-5">
-             <CalendarIcon size={120} />
-          </div>
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center justify-between mb-4">
             <div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Lịch nhắc</p>
-              <h3 className="font-serif font-bold text-2xl text-slate-900">Sự kiện & Task</h3>
+              <p className="text-xs font-medium text-muted mb-0.5">Lịch nhắc</p>
+              <h3 className="text-base font-bold text-ink">Sự kiện & Task</h3>
             </div>
-            <CalendarIcon size={20} className="text-primary" />
+            <CalendarIcon size={16} className="text-muted-soft" />
           </div>
           
-          <div className="space-y-6">
+          <div className="space-y-4">
             {notifications.length > 0 ? notifications.map((item, idx) => {
               const Icon = item.type === 'alert' ? AlertCircle : item.type === 'clock' ? Clock : CheckCircle2;
               return (
@@ -489,30 +472,30 @@ export default function DashboardOverview() {
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.1 * idx }}
-                  className="group flex items-start gap-4"
+                  className="flex items-start gap-3"
                 >
                   <div className={cn(
-                    "p-2.5 rounded-xl shrink-0 mt-0.5",
-                    item.status === 'urgent' ? "bg-red-50 text-red-500" : 
-                    item.status === 'done' ? "bg-emerald-50 text-emerald-500" : "bg-blue-50 text-blue-500"
+                    "p-2 rounded-lg shrink-0 mt-0.5",
+                    item.status === 'urgent' ? "bg-red-50 text-red-500 dark:bg-red-950/30 dark:text-red-400" : 
+                    item.status === 'done' ? "bg-emerald-50 text-emerald-500 dark:bg-emerald-950/30 dark:text-emerald-400" : "bg-accent-light text-accent-amber dark:bg-coral/20 dark:text-coral"
                   )}>
-                    <Icon size={16} />
+                    <Icon size={14} />
                   </div>
-                  <div className="flex-1 min-w-0 border-b border-slate-100 pb-4">
+                  <div className="flex-1 min-w-0 border-b border-hairline pb-3">
                     <div className="flex items-center justify-between gap-2 mb-1">
-                      <p className="text-sm font-bold text-slate-900 truncate leading-none">{item.title}</p>
-                      <span className="text-[10px] font-black text-slate-400 uppercase">{item.timeLabel}</span>
+                      <p className="text-sm font-medium text-ink truncate">{item.title}</p>
+                      <span className="text-[10px] text-muted whitespace-nowrap">{item.timeLabel}</span>
                     </div>
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-3">
                        <button 
                          onClick={() => { setSelectedNotif(item); setIsNotifModalOpen(true); }}
-                         className="text-[10px] font-bold text-slate-400 hover:text-primary transition-colors underline-offset-4 hover:underline"
+                         className="text-[10px] font-medium text-muted hover:text-coral transition-colors"
                        >
                          CHỈNH SỬA
                        </button>
                        <button 
                          onClick={() => handleDeleteNotif(item.id)}
-                         className="text-[10px] font-bold text-slate-400 hover:text-red-500 transition-colors underline-offset-4 hover:underline"
+                         className="text-[10px] font-medium text-muted hover:text-red-500 dark:hover:text-red-400 transition-colors"
                        >
                          GỠ BỎ
                        </button>
@@ -521,17 +504,17 @@ export default function DashboardOverview() {
                 </motion.div>
               );
             }) : (
-              <div className="text-center py-12 opacity-30">
-                <CalendarIcon size={32} className="mx-auto mb-3 text-slate-300" />
-                <p className="text-xs font-bold uppercase tracking-widest text-slate-400">Không có việc cần làm</p>
+              <div className="text-center py-8">
+                <CalendarIcon size={28} className="mx-auto mb-2 text-muted-soft" />
+                <p className="text-xs text-muted">Không có việc cần làm</p>
               </div>
             )}
           </div>
 
-          <div className="mt-10 p-5 bg-primary/5 rounded-2xl border border-primary/10">
-             <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-1">Mẹo quản lý</p>
-             <p className="text-xs text-slate-600 leading-relaxed italic">
-               "Dùng tính năng Học phí để tự động gửi thông báo nhắc đóng phí khi tới kỳ hạn."
+          <div className="mt-6 p-4 bg-accent-light dark:bg-coral/20 rounded-xl">
+             <p className="text-xs font-semibold text-coral mb-1">Mẹo quản lý</p>
+             <p className="text-xs text-muted leading-relaxed">
+               Dùng tính năng Học phí để tự động gửi thông báo nhắc đóng phí khi tới kỳ hạn.
              </p>
           </div>
         </motion.div>
@@ -552,48 +535,48 @@ export default function DashboardOverview() {
       >
         {selectedInvoice && bankSettings && (
           <div className="space-y-4 md:space-y-6">
-            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 flex items-center justify-between">
+            <div className="bg-accent-light p-4 rounded-xl border border-hairline flex items-center justify-between">
                <div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Mã hóa đơn</p>
-                  <p className="text-xs font-mono font-bold text-slate-700">#{selectedInvoice.id.slice(0, 8).toUpperCase()}</p>
+                  <p className="text-[10px] font-medium text-muted uppercase mb-0.5">Mã hóa đơn</p>
+                  <p className="text-xs font-mono font-semibold text-body">#{selectedInvoice.id.slice(0, 8).toUpperCase()}</p>
                </div>
                <div className="text-right">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Số tiền</p>
-                  <p className="text-base md:text-lg font-black text-primary">{formatCurrency(selectedInvoice.totalAmount)}</p>
+                  <p className="text-[10px] font-medium text-muted uppercase mb-0.5">Số tiền</p>
+                  <p className="text-base md:text-lg font-bold text-coral">{formatCurrency(selectedInvoice.totalAmount)}</p>
                </div>
             </div>
 
             <div className="flex flex-col md:flex-row gap-4 md:gap-6">
                <div className="flex-1 space-y-3">
                   <div>
-                    <label className="text-[10px] font-bold text-slate-500 mb-1 block">Ngân hàng</label>
-                    <div className="bg-white border border-slate-200 p-2.5 rounded-lg flex items-center justify-between">
+                    <label className="text-[10px] font-medium text-muted mb-1 block">Ngân hàng</label>
+                    <div className="bg-card border border-hairline p-2.5 rounded-lg flex items-center justify-between">
                        <span className="text-xs md:text-sm font-semibold">{bankSettings.name}</span>
                     </div>
                   </div>
                   <div>
-                    <label className="text-[10px] font-bold text-slate-500 mb-1 block">Số tài khoản</label>
-                    <div className="bg-white border border-slate-200 p-2.5 rounded-lg flex items-center justify-between">
-                       <span className="text-xs md:text-sm font-mono font-bold text-primary">{bankSettings.accountNumber}</span>
+                    <label className="text-[10px] font-medium text-muted mb-1 block">Số tài khoản</label>
+                    <div className="bg-card border border-hairline p-2.5 rounded-lg flex items-center justify-between">
+                       <span className="text-xs md:text-sm font-mono font-semibold text-coral">{bankSettings.accountNumber}</span>
                     </div>
                   </div>
                   <div>
-                    <label className="text-[10px] font-bold text-slate-500 mb-1 block">Chủ tài khoản</label>
-                    <div className="bg-white border border-slate-200 p-2.5 rounded-lg">
-                       <span className="text-xs md:text-sm font-bold uppercase">{bankSettings.accountName}</span>
+                    <label className="text-[10px] font-medium text-muted mb-1 block">Chủ tài khoản</label>
+                    <div className="bg-card border border-hairline p-2.5 rounded-lg">
+                       <span className="text-xs md:text-sm font-semibold uppercase">{bankSettings.accountName}</span>
                     </div>
                   </div>
                </div>
 
                <div className="w-full md:w-44 flex flex-col items-center gap-2">
-                  <div className="bg-white p-1.5 border-2 border-primary rounded-xl shadow-lg w-32 md:w-full">
+                  <div className="bg-card p-1.5 border-2 border-coral rounded-xl w-32 md:w-full">
                      <img 
                        src={getPaymentQRUrl(selectedInvoice.totalAmount, `HOCPHI THANG ${selectedInvoice.month} ${students.find(s => s.id === selectedInvoice.studentId)?.name || ''}`, bankSettings)} 
                        alt="Payment QR" 
                        className="w-full aspect-square"
                      />
                   </div>
-                  <p className="text-[9px] text-slate-400 text-center leading-tight">
+                  <p className="text-[9px] text-muted text-center leading-tight">
                     Quét mã QR để tự động nhập thông tin
                   </p>
                </div>
@@ -603,7 +586,7 @@ export default function DashboardOverview() {
                <button 
                  type="button"
                  onClick={() => setIsPaymentModalOpen(false)}
-                 className="flex-1 py-3 bg-slate-50 text-slate-600 rounded-xl text-xs md:text-sm font-bold hover:bg-slate-100 transition-all border border-slate-100 px-4"
+                 className="flex-1 py-2.5 text-sm font-medium text-muted bg-card dark:bg-transparent border border-hairline rounded-xl hover:bg-accent-light dark:hover:bg-card transition-colors"
                >
                  Đóng
                </button>
@@ -614,9 +597,9 @@ export default function DashboardOverview() {
                    setIsPaymentModalOpen(false);
                    fetchAllData();
                  }}
-                 className="flex-1 py-3 bg-emerald-600 text-white rounded-xl text-xs md:text-sm font-bold hover:bg-emerald-700 shadow-md transition-all active:scale-95 flex items-center justify-center gap-2 px-4 whitespace-nowrap"
+                 className="flex-1 py-2.5 bg-emerald-600 text-white text-sm font-medium rounded-xl hover:bg-emerald-700 transition-all flex items-center justify-center gap-2 shadow-sm"
                >
-                 <CheckCircle2 size={16} />
+                 <CheckCircle2 size={15} />
                  Xác nhận đã thu
                </button>
             </div>
@@ -631,19 +614,19 @@ export default function DashboardOverview() {
         title="Xác nhận xóa"
       >
         <div className="space-y-4">
-          <p className="text-sm text-slate-600">Bạn có chắc chắn muốn xóa hóa đơn này? Hành động này không thể hoàn tác.</p>
+          <p className="text-sm text-muted">Bạn có chắc chắn muốn xóa hóa đơn này? Hành động này không thể hoàn tác.</p>
           <div className="flex gap-3">
             <button 
               type="button"
               onClick={() => setIsConfirmDeleteOpen(false)}
-              className="flex-1 py-3 bg-slate-100 text-slate-700 rounded-xl font-bold hover:bg-slate-200 transition-all"
+              className="flex-1 py-2.5 text-sm font-medium text-muted bg-card dark:bg-transparent border border-hairline rounded-xl hover:bg-accent-light dark:hover:bg-card transition-colors"
             >
               Hủy
             </button>
             <button 
               type="button"
               onClick={confirmDeleteInvoice}
-              className="flex-1 py-3 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition-all shadow-lg shadow-red-100"
+              className="flex-1 py-2.5 bg-red-600 text-white text-sm font-medium rounded-xl hover:bg-red-700 transition-all shadow-sm"
             >
               Xóa ngay
             </button>
@@ -686,32 +669,30 @@ function NotificationForm({ initialData, onSuccess, onCancel }: { initialData?: 
     }
   };
 
-  const inputClass = "w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/20 outline-none text-sm";
-
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 font-sans text-sm">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
        <div>
-         <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Nội dung</label>
-         <input {...register('title')} className={inputClass} placeholder="Ví dụ: Chốt điểm danh lớp Piano" />
+         <label className="block text-xs font-medium text-muted uppercase mb-1">Nội dung</label>
+         <input {...register('title')} className="w-full px-4 py-2.5 bg-card rounded-xl border border-hairline text-sm text-ink placeholder:text-muted focus:border-coral focus:ring-2 focus:ring-accent-light dark:focus:ring-coral/20 outline-none transition-colors" placeholder="Ví dụ: Chốt điểm danh lớp Piano" />
          {errors.title && <p className="text-[10px] text-red-500 mt-1">{errors.title.message as string}</p>}
        </div>
        <div>
-         <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Thời điểm hiển thị</label>
-         <input {...register('timeLabel')} className={inputClass} placeholder="Ví dụ: 10:00 AM hoặc Hôm nay" />
+         <label className="block text-xs font-medium text-muted uppercase mb-1">Thời điểm hiển thị</label>
+         <input {...register('timeLabel')} className="w-full px-4 py-2.5 bg-card rounded-xl border border-hairline text-sm text-ink placeholder:text-muted focus:border-coral focus:ring-2 focus:ring-accent-light dark:focus:ring-coral/20 outline-none transition-colors" placeholder="Ví dụ: 10:00 AM hoặc Hôm nay" />
          {errors.timeLabel && <p className="text-[10px] text-red-500 mt-1">{errors.timeLabel.message as string}</p>}
        </div>
        <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Mức độ</label>
-            <select {...register('status')} className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none cursor-pointer">
+            <label className="block text-xs font-medium text-muted uppercase mb-1">Mức độ</label>
+            <select {...register('status')} className="w-full px-4 py-2 bg-card border border-hairline rounded-xl outline-none cursor-pointer">
               <option value="pending">Bình thường</option>
               <option value="urgent">Khẩn cấp</option>
               <option value="done">Hoàn thành</option>
             </select>
           </div>
           <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Biểu tượng</label>
-            <select {...register('type')} className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none cursor-pointer">
+            <label className="block text-xs font-medium text-muted uppercase mb-1">Biểu tượng</label>
+            <select {...register('type')} className="w-full px-4 py-2 bg-card border border-hairline rounded-xl outline-none cursor-pointer">
               <option value="clock">Thời gian</option>
               <option value="alert">Cảnh báo</option>
               <option value="check">Thành công</option>
@@ -719,8 +700,8 @@ function NotificationForm({ initialData, onSuccess, onCancel }: { initialData?: 
           </div>
        </div>
        <div className="flex gap-3 justify-end pt-4">
-          <button type="button" onClick={onCancel} className="px-4 py-2 text-slate-500 font-bold hover:bg-slate-50 rounded-lg">Hủy</button>
-          <button type="submit" disabled={isSubmitting} className="bg-primary text-white px-6 py-2 rounded-xl font-bold shadow-md hover:bg-primary/90 transition-all">Lưu</button>
+          <button type="button" onClick={onCancel} className="px-4 py-2.5 text-sm font-medium text-muted hover:bg-hairline/50 dark:hover:bg-card rounded-lg transition-colors">Hủy</button>
+          <button type="submit" disabled={isSubmitting} className="px-5 py-2.5 bg-coral text-white text-sm font-medium rounded-xl hover:bg-coral-active transition-all shadow-sm disabled:opacity-50">Lưu</button>
        </div>
     </form>
   );

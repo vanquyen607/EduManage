@@ -44,37 +44,34 @@ export default function ClassForm({ onSuccess, onCancel, initialData }: ClassFor
     }
   };
 
-  const inputClass = "w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/20 outline-none text-sm";
-  const errorClass = "text-[10px] text-red-500 font-medium mt-1";
-
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <div>
-        <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Tên lớp học</label>
-        <input {...register('name')} type="text" className={inputClass} placeholder="Ví dụ: Lớp Toán Nâng Cao" />
-        {errors.name && <p className={errorClass}>{errors.name.message}</p>}
+        <label className="block text-xs font-bold text-muted uppercase mb-1">Tên lớp học</label>
+        <input {...register('name')} type="text" className="w-full px-4 py-2 bg-accent-light border border-hairline rounded-xl focus:ring-2 focus:ring-coral/20 outline-none text-sm" placeholder="Ví dụ: Lớp Toán Nâng Cao" />
+        {errors.name && <p className="text-[10px] text-red-500 font-medium mt-1">{errors.name.message}</p>}
       </div>
 
       <div>
-        <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Học phí mỗi buổi (VND)</label>
-        <input {...register('feePerSession', { valueAsNumber: true })} type="number" className={inputClass} />
-        {errors.feePerSession && <p className={errorClass}>{errors.feePerSession.message}</p>}
+        <label className="block text-xs font-bold text-muted uppercase mb-1">Học phí mỗi buổi (VND)</label>
+        <input {...register('feePerSession', { valueAsNumber: true })} type="number" className="w-full px-4 py-2 bg-accent-light border border-hairline rounded-xl focus:ring-2 focus:ring-coral/20 outline-none text-sm" />
+        {errors.feePerSession && <p className="text-[10px] text-red-500 font-medium mt-1">{errors.feePerSession.message}</p>}
       </div>
 
       <div>
-        <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Màu sắc định danh</label>
-        <input {...register('color')} type="color" className="w-full h-10 p-1 bg-slate-50 border border-slate-200 rounded-xl outline-none" />
-        {errors.color && <p className={errorClass}>{errors.color.message}</p>}
+        <label className="block text-xs font-bold text-muted uppercase mb-1">Màu sắc định danh</label>
+        <input {...register('color')} type="color" className="w-full h-10 p-1 bg-accent-light border border-hairline rounded-xl outline-none" />
+        {errors.color && <p className="text-[10px] text-red-500 font-medium mt-1">{errors.color.message}</p>}
       </div>
 
       <div>
-        <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Mô tả</label>
-        <textarea {...register('description')} rows={3} className={inputClass} />
+        <label className="block text-xs font-bold text-muted uppercase mb-1">Mô tả</label>
+        <textarea {...register('description')} rows={3} className="w-full px-4 py-2 bg-accent-light border border-hairline rounded-xl focus:ring-2 focus:ring-coral/20 outline-none text-sm" />
       </div>
 
       <div className="flex gap-3 justify-end pt-4">
-        <button type="button" onClick={onCancel} className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 rounded-lg">Hủy</button>
-        <button type="submit" disabled={isSubmitting} className="bg-primary text-white px-6 py-2 rounded-xl text-sm font-bold shadow-md hover:bg-primary/90 transition-all">
+        <button type="button" onClick={onCancel} className="px-4 py-2 text-sm text-muted hover:bg-accent-light rounded-lg">Hủy</button>
+        <button type="submit" disabled={isSubmitting} className="bg-coral text-white px-6 py-2 rounded-xl text-sm font-bold shadow-md hover:bg-coral/90 transition-all">
           {initialData ? 'Cập nhật' : 'Thêm lớp'}
         </button>
       </div>

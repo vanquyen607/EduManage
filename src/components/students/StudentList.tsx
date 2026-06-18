@@ -229,26 +229,26 @@ export default function StudentList() {
 
   return (
     <div className="space-y-10 pb-10">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-slate-200 pb-8">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-hairline pb-8">
         <div>
           <div className="flex items-center gap-2 mb-1">
              <div className="h-px w-8 bg-accent" />
              <p className="text-[10px] font-black tracking-[0.2em] text-accent uppercase">Dữ liệu học viên</p>
           </div>
-          <h2 className="text-4xl font-serif font-bold text-slate-900 tracking-tight">Danh sách Học sinh</h2>
-          <p className="text-slate-500 text-sm mt-1">Hệ thống quản lý thông tin và theo dõi tiến độ đào tạo.</p>
+          <h2 className="text-4xl  font-bold text-ink tracking-tight">Danh sách Học sinh</h2>
+          <p className="text-muted text-sm mt-1">Hệ thống quản lý thông tin và theo dõi tiến độ đào tạo.</p>
         </div>
         <div className="flex gap-3">
           <button 
             onClick={handleExportExcel}
-            className="group px-6 py-3 bg-white border border-slate-200 text-slate-900 rounded-xl text-[10px] font-black tracking-widest uppercase hover:border-slate-800 transition-all flex items-center gap-2 active:scale-95 shadow-sm"
+            className="group px-6 py-3 bg-card border border-hairline text-ink rounded-xl text-[10px] font-black tracking-widest uppercase hover:border-slate-800 transition-all flex items-center gap-2 active:scale-95 shadow-sm"
           >
             <Download size={14} />
             XUẤT EXCEL
           </button>
           <button 
             onClick={exportPDF}
-            className="group px-6 py-3 bg-white border border-slate-200 text-slate-900 rounded-xl text-[10px] font-black tracking-widest uppercase hover:border-slate-800 transition-all flex items-center gap-2 active:scale-95 shadow-sm"
+            className="group px-6 py-3 bg-card border border-hairline text-ink rounded-xl text-[10px] font-black tracking-widest uppercase hover:border-slate-800 transition-all flex items-center gap-2 active:scale-95 shadow-sm"
           >
             <Download size={14} />
             XUẤT PDF
@@ -256,7 +256,7 @@ export default function StudentList() {
           <button 
             id="add-student-btn"
             onClick={handleAdd}
-            className="group px-6 py-3 bg-slate-900 text-white rounded-xl text-[10px] font-black tracking-widest uppercase hover:bg-slate-800 transition-all flex items-center gap-2 shadow-lg shadow-slate-200 active:scale-95"
+            className="group px-6 py-3 bg-coral text-white rounded-xl text-[10px] font-black tracking-widest uppercase hover:bg-coral-active transition-all flex items-center gap-2 shadow-lg shadow-coral/20 active:scale-95"
           >
             <Plus size={14} />
             THÊM HỌC SINH
@@ -264,24 +264,24 @@ export default function StudentList() {
         </div>
       </div>
 
-      <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-6 items-center">
+      <div className="bg-card p-6 rounded-xl border border-hairline shadow-sm flex flex-col md:flex-row gap-6 items-center">
         <div className="relative flex-1 w-full group">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-accent transition-colors" size={18} />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted group-focus-within:text-accent transition-colors" size={18} />
           <input 
             type="text"
             id="student-search"
             placeholder="Tìm kiếm theo tên hoặc số điện thoại..."
-            className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-transparent rounded-2xl focus:bg-white focus:border-slate-200 focus:outline-none focus:ring-4 focus:ring-slate-50 transition-all text-sm font-medium"
+            className="w-full pl-12 pr-4 py-3.5 bg-accent-light border border-transparent rounded-xl focus:bg-white focus:border-hairline focus:outline-none focus:ring-4 focus:ring-slate-50 transition-all text-sm font-medium"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
         <div className="flex gap-4 w-full md:w-auto">
           <div className="relative w-full md:w-64 group">
-            <Filter className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-accent transition-colors" size={16} />
+            <Filter className="absolute left-4 top-1/2 -translate-y-1/2 text-muted group-focus-within:text-accent transition-colors" size={16} />
             <select 
               id="class-filter"
-              className="w-full pl-12 pr-10 py-3.5 bg-slate-50 border border-transparent rounded-2xl focus:bg-white focus:border-slate-200 focus:outline-none focus:ring-4 focus:ring-slate-50 transition-all appearance-none text-[11px] font-black tracking-widest uppercase cursor-pointer"
+              className="w-full pl-12 pr-10 py-3.5 bg-accent-light border border-transparent rounded-xl focus:bg-white focus:border-hairline focus:outline-none focus:ring-4 focus:ring-slate-50 transition-all appearance-none text-[11px] font-black tracking-widest uppercase cursor-pointer"
               value={selectedClass}
               onChange={(e) => setSelectedClass(e.target.value)}
             >
@@ -290,22 +290,22 @@ export default function StudentList() {
                 <option key={c.id} value={c.id}>{c.name.toUpperCase()}</option>
               ))}
             </select>
-            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-muted">
                <svg size={16} className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm">
+      <div className="bg-card rounded-xl border border-hairline overflow-hidden shadow-sm">
         <div className="md:hidden divide-y divide-slate-100">
           {isLoading ? (
             [...Array(4)].map((_, i) => (
               <div key={i} className="p-6 animate-pulse flex items-center gap-4">
-                <div className="w-12 h-12 rounded-2xl bg-slate-100" />
+                <div className="w-12 h-12 rounded-xl bg-hairline/50" />
                 <div className="flex-1 space-y-2">
-                  <div className="h-4 w-32 bg-slate-100 rounded" />
-                  <div className="h-3 w-20 bg-slate-50 rounded" />
+                  <div className="h-4 w-32 bg-hairline/50 rounded" />
+                  <div className="h-3 w-20 bg-accent-light rounded" />
                 </div>
               </div>
             ))
@@ -313,21 +313,21 @@ export default function StudentList() {
             <div key={student.id} className="p-6 space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-2xl bg-slate-900 flex items-center justify-center text-white font-serif text-lg font-bold shadow-lg shadow-slate-200">
+                      <div className="w-12 h-12 rounded-xl bg-surface-dark flex items-center justify-center text-white text-lg font-bold shadow-lg">
                     {student.name.charAt(0)}
                   </div>
                   <div>
-                    <p className="font-bold text-slate-900">{student.name}</p>
-                    <div className="inline-flex items-center gap-2 bg-slate-100 px-2 py-1 rounded-full mt-1">
-                      <span className="text-[9px] font-black text-slate-600 uppercase tracking-tighter">
+                    <p className="font-bold text-ink">{student.name}</p>
+                    <div className="inline-flex items-center gap-2 bg-hairline/50 px-2 py-1 rounded-full mt-1">
+                      <span className="text-[9px] font-black text-muted uppercase tracking-tighter">
                         {classes.find(c => c.id === student.classId)?.name || 'N/A'}
                       </span>
                     </div>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="text-xs font-bold text-slate-800">{student.parentName}</p>
-                  <p className="text-[10px] font-mono text-slate-500">{student.parentPhone}</p>
+                  <p className="text-xs font-bold text-ink">{student.parentName}</p>
+                  <p className="text-[10px] font-mono text-muted">{student.parentPhone}</p>
                 </div>
               </div>
 
@@ -337,7 +337,7 @@ export default function StudentList() {
                   <button onClick={() => { setCommentingStudent(student); setIsCommentModalOpen(true); }} className="p-2.5 bg-amber-50 text-amber-600 rounded-xl"><MessageSquare size={18} /></button>
                 </div>
                 <div className="flex gap-1">
-                  <button onClick={() => handleEdit(student)} className="p-2.5 bg-slate-50 text-slate-600 rounded-xl"><Edit2 size={18} /></button>
+                  <button onClick={() => handleEdit(student)} className="p-2.5 bg-accent-light text-muted rounded-xl"><Edit2 size={18} /></button>
                   <button onClick={() => handleDelete(student.id)} className="p-2.5 bg-red-50 text-red-500 rounded-xl"><Trash2 size={18} /></button>
                 </div>
               </div>
@@ -348,11 +348,11 @@ export default function StudentList() {
         <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left">
             <thead>
-              <tr className="bg-slate-50/50 border-b border-slate-100">
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Học sinh</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Lớp học</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Phụ huynh</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-right">Hành động</th>
+              <tr className="bg-accent-light/50 border-b border-hairline">
+                <th className="px-8 py-5 text-[10px] font-black text-muted uppercase tracking-[0.2em]">Học sinh</th>
+                <th className="px-8 py-5 text-[10px] font-black text-muted uppercase tracking-[0.2em]">Lớp học</th>
+                <th className="px-8 py-5 text-[10px] font-black text-muted uppercase tracking-[0.2em]">Phụ huynh</th>
+                <th className="px-8 py-5 text-[10px] font-black text-muted uppercase tracking-[0.2em] text-right">Hành động</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
@@ -361,10 +361,10 @@ export default function StudentList() {
                   <tr key={i} className="animate-pulse">
                     <td colSpan={4} className="px-8 py-10">
                        <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 rounded-2xl bg-slate-100" />
+                          <div className="w-12 h-12 rounded-xl bg-hairline/50" />
                           <div className="space-y-2">
-                             <div className="h-4 w-32 bg-slate-100 rounded" />
-                             <div className="h-3 w-20 bg-slate-50 rounded" />
+                             <div className="h-4 w-32 bg-hairline/50 rounded" />
+                             <div className="h-3 w-20 bg-accent-light rounded" />
                           </div>
                        </div>
                     </td>
@@ -376,57 +376,57 @@ export default function StudentList() {
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: idx * 0.05 }}
-                  className="hover:bg-slate-50/50 transition-colors group"
+                  className="hover:bg-accent-light/50 transition-colors group"
                 >
                   <td className="px-8 py-6">
                     <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-2xl bg-slate-900 flex items-center justify-center text-white font-serif text-lg font-bold shadow-lg shadow-slate-200">
+                  <div className="w-12 h-12 rounded-xl bg-surface-dark flex items-center justify-center text-white text-lg font-bold shadow-lg">
                         {student.name.charAt(0)}
                       </div>
                       <div>
-                        <p className="font-bold text-slate-900">{student.name}</p>
-                        <p className="text-[10px] font-black text-slate-400 uppercase mt-0.5 tracking-tighter italic">{student.birthDate}</p>
+                        <p className="font-bold text-ink">{student.name}</p>
+                        <p className="text-[10px] font-black text-muted uppercase mt-0.5 tracking-tighter italic">{student.birthDate}</p>
                       </div>
                     </div>
                   </td>
                   <td className="px-8 py-6">
-                    <div className="inline-flex items-center gap-2 bg-slate-100 px-3 py-1.5 rounded-full border border-slate-200/50">
+                    <div className="inline-flex items-center gap-2 bg-hairline/50 px-3 py-1.5 rounded-full border border-hairline/50">
                       <div className="w-1.5 h-1.5 rounded-full bg-slate-400" />
-                      <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">
+                      <span className="text-[10px] font-black text-muted uppercase tracking-widest">
                         {classes.find(c => c.id === student.classId)?.name || 'N/A'}
                       </span>
                     </div>
                   </td>
                   <td className="px-8 py-6">
-                    <p className="text-sm font-bold text-slate-800">{student.parentName}</p>
-                    <p className="text-xs font-mono text-slate-500 mt-0.5">{student.parentPhone}</p>
+                    <p className="text-sm font-bold text-ink">{student.parentName}</p>
+                    <p className="text-xs font-mono text-muted mt-0.5">{student.parentPhone}</p>
                   </td>
                   <td className="px-8 py-6 text-right">
                     <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
                       <button 
                         onClick={() => { setReportStudent(student); setIsReportModalOpen(true); }}
-                        className="p-2.5 text-slate-400 hover:text-cyan-600 hover:bg-cyan-50 rounded-xl transition-all"
+                        className="p-2.5 text-muted hover:text-cyan-600 hover:bg-cyan-50 rounded-xl transition-all"
                         title="Báo cáo học tập"
                       >
                         <FileBarChart size={18} />
                       </button>
                       <button 
                         onClick={() => { setCommentingStudent(student); setIsCommentModalOpen(true); }}
-                        className="p-2.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-xl transition-all"
+                        className="p-2.5 text-muted hover:text-amber-600 hover:bg-amber-50 rounded-xl transition-all"
                         title="Nhận xét"
                       >
                         <MessageSquare size={18} />
                       </button>
                       <button 
                         onClick={() => handleEdit(student)}
-                        className="p-2.5 text-slate-400 hover:text-primary hover:bg-slate-100 rounded-xl transition-all"
+                        className="p-2.5 text-muted hover:text-coral hover:bg-hairline/50 rounded-xl transition-all"
                         title="Sửa"
                       >
                         <Edit2 size={18} />
                       </button>
                       <button 
                         onClick={() => handleDelete(student.id)}
-                        className="p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                        className="p-2.5 text-muted hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
                         title="Xóa"
                       >
                         <Trash2 size={18} />
@@ -441,10 +441,10 @@ export default function StudentList() {
         {!isLoading && <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />}
         {!isLoading && filteredStudents.length === 0 && (
           <div className="py-20 text-center">
-             <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100 text-slate-300">
+             <div className="w-16 h-16 bg-accent-light rounded-full flex items-center justify-center mx-auto mb-4 border border-hairline text-muted-soft">
                <Search size={24} />
              </div>
-             <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">Không tìm thấy học sinh nào</p>
+             <p className="text-sm font-bold text-muted uppercase tracking-widest">Không tìm thấy học sinh nào</p>
           </div>
         )}
       </div>
@@ -461,14 +461,14 @@ export default function StudentList() {
       <Modal isOpen={isCommentModalOpen} onClose={() => setIsCommentModalOpen(false)} title={`Nhận xét: ${commentingStudent?.name}`}>
         <form onSubmit={handleCommentSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Xếp hạng</label>
+            <label className="block text-xs font-bold text-muted uppercase mb-2">Xếp hạng</label>
             <div className="flex gap-2">
               {[1, 2, 3, 4, 5].map(star => (
                 <button 
                   key={star}
                   type="button"
                   onClick={() => setCommentRating(star)}
-                  className={cn("p-1 transition-colors", star <= commentRating ? "text-amber-400" : "text-slate-200")}
+                  className={cn("p-1 transition-colors", star <= commentRating ? "text-amber-400" : "text-muted-soft")}
                 >
                   <Star fill={star <= commentRating ? "currentColor" : "none"} size={24} />
                 </button>
@@ -476,17 +476,17 @@ export default function StudentList() {
             </div>
           </div>
           <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Nội dung nhận xét</label>
+            <label className="block text-xs font-bold text-muted uppercase mb-2">Nội dung nhận xét</label>
             <textarea 
               required
               rows={4}
-              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-sm"
+              className="w-full px-4 py-3 bg-accent-light border border-hairline rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-sm"
               placeholder="Nhập nhận xét về tình hình học tập của học sinh trong tháng..."
               value={commentContent}
               onChange={e => setCommentContent(e.target.value)}
             />
           </div>
-          <button type="submit" className="w-full bg-primary text-white py-3 rounded-xl font-bold hover:bg-primary/90 transition-all shadow-md">
+          <button type="submit" className="w-full bg-coral text-white py-3 rounded-xl font-bold hover:bg-coral/90 transition-all shadow-md">
             Lưu nhận xét
           </button>
         </form>
@@ -498,24 +498,24 @@ export default function StudentList() {
         title={`Báo cáo tiến độ: ${reportStudent?.name}`}
       >
         {reportStudent && (
-          <div className="space-y-6 font-sans">
-            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 flex items-center justify-between">
+          <div className="space-y-6 ">
+            <div className="bg-accent-light p-4 rounded-xl border border-hairline flex items-center justify-between">
               <div>
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Thông tin cơ bản</p>
+                <p className="text-xs font-bold text-muted uppercase tracking-wider mb-1">Thông tin cơ bản</p>
                 <div className="space-y-0.5">
                   <p className="text-sm"><strong>Học sinh:</strong> {reportStudent.name}</p>
                   <p className="text-sm"><strong>Lớp học:</strong> {classes.find(c => c.id === reportStudent.classId)?.name || 'N/A'}</p>
                   <p className="text-sm"><strong>Số điện thoại:</strong> {reportStudent.parentPhone}</p>
                 </div>
               </div>
-              <div className="w-16 h-16 rounded-2xl bg-cyan-50 flex items-center justify-center text-cyan-600">
+              <div className="w-16 h-16 rounded-xl bg-cyan-50 flex items-center justify-center text-cyan-600">
                 <FileBarChart size={32} />
               </div>
             </div>
 
             <div>
-              <h4 className="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
-                <MessageSquare size={16} className="text-primary" />
+              <h4 className="text-sm font-bold text-body mb-3 flex items-center gap-2">
+                <MessageSquare size={16} className="text-coral" />
                 Lịch sử nhận xét học tập
               </h4>
               <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
@@ -524,9 +524,9 @@ export default function StudentList() {
                     .filter(c => c.studentId === reportStudent.id)
                     .sort((a, b) => b.year - a.year || b.month - a.month)
                     .map((com, idx) => (
-                      <div key={idx} className="p-3 bg-white border border-slate-200 rounded-xl shadow-sm">
+                      <div key={idx} className="p-3 bg-card border border-hairline rounded-xl shadow-sm">
                         <div className="flex justify-between items-start mb-2">
-                          <span className="text-[10px] font-black uppercase px-2 py-0.5 bg-slate-100 rounded text-slate-600">
+                          <span className="text-[10px] font-black uppercase px-2 py-0.5 bg-hairline/50 rounded text-muted">
                             Tháng {com.month}/{com.year}
                           </span>
                           <div className="flex gap-0.5">
@@ -534,17 +534,17 @@ export default function StudentList() {
                               <Star 
                                 key={i} 
                                 size={12} 
-                                className={cn(i < com.rating ? "text-amber-400 fill-current" : "text-slate-200")} 
+                                className={cn(i < com.rating ? "text-amber-400 fill-current" : "text-muted-soft")} 
                               />
                             ))}
                           </div>
                         </div>
-                        <p className="text-xs text-slate-600 leading-relaxed italic">"{com.content}"</p>
+                        <p className="text-xs text-muted leading-relaxed italic">"{com.content}"</p>
                       </div>
                     ))
                 ) : (
-                  <div className="text-center py-6 bg-slate-50 rounded-xl border border-dashed border-slate-200">
-                    <p className="text-xs text-slate-400">Chưa có nhận xét nào cho học sinh này.</p>
+                  <div className="text-center py-6 bg-accent-light rounded-xl border border-dashed border-hairline">
+                    <p className="text-xs text-muted">Chưa có nhận xét nào cho học sinh này.</p>
                   </div>
                 )}
               </div>
@@ -553,7 +553,7 @@ export default function StudentList() {
             <div className="pt-4 flex gap-3">
               <button 
                 onClick={() => setIsReportModalOpen(false)}
-                className="flex-1 py-3 border border-slate-200 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-50 transition-colors"
+                className="flex-1 py-3 border border-hairline rounded-xl text-sm font-bold text-muted hover:bg-accent-light transition-colors"
               >
                 Đóng
               </button>
@@ -578,11 +578,11 @@ export default function StudentList() {
         title="Xác nhận xóa"
       >
         <div className="space-y-4">
-          <p className="text-sm text-slate-600">Bạn có chắc chắn muốn xóa học sinh này? Hành động này không thể hoàn tác.</p>
+          <p className="text-sm text-muted">Bạn có chắc chắn muốn xóa học sinh này? Hành động này không thể hoàn tác.</p>
           <div className="flex gap-3">
             <button
               onClick={() => setIsDeleteConfirmOpen(false)}
-              className="flex-1 py-3 bg-slate-100 text-slate-700 rounded-xl font-bold hover:bg-slate-200 transition-all"
+              className="flex-1 py-3 bg-card border border-hairline text-muted rounded-xl font-bold hover:bg-accent-light transition-all"
             >
               Hủy
             </button>

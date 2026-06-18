@@ -10,13 +10,15 @@ import GradeManager from './components/grades/GradeManager';
 import ScheduleManager from './components/schedule/ScheduleManager';
 import SettingsView from './components/settings/SettingsView';
 import { motion, AnimatePresence } from 'motion/react';
-import { Menu, Sun, Moon } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import { cn } from './lib/utils';
-import { useTheme } from './lib/themeContext';
+import { useTheme, themeConfig } from './lib/themeContext';
+import type { Theme } from './lib/themeContext';
 import { useAuth, logout, initAuth } from './lib/authStore';
 
 export default function App() {
-  const { theme, toggleTheme } = useTheme();
+  const { theme, setTheme } = useTheme();
+  const themes = Object.keys(themeConfig) as Theme[];
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -36,7 +38,7 @@ export default function App() {
     initAuth().then(() => setLoading(false));
   }, []);
 
-  if (loading) return <div className="h-screen flex items-center justify-center font-sans text-slate-400">Đang tải dữ liệu...</div>;
+  if (loading) return <div className="h-screen flex items-center justify-center  text-muted">Đang tải dữ liệu...</div>;
 
   if (!user) {
     return <Auth />;
@@ -66,7 +68,7 @@ export default function App() {
   };
 
   return (
-    <div className="flex bg-slate-50 min-h-screen font-sans selection:bg-primary/10 selection:text-primary relative overflow-hidden">
+    <div className="flex bg-accent-light h-screen  selection:bg-coral/10 selection:text-coral relative overflow-hidden">
       <Navbar 
         activeTab={activeTab} 
         setActiveTab={(tab) => {
@@ -79,33 +81,43 @@ export default function App() {
       
       <main className="flex-1 h-screen overflow-y-auto px-4 sm:px-8 py-6 pb-24 md:pb-6">
         <header className="flex items-center justify-between mb-8 md:mb-12">
-          <button 
-            onClick={() => setIsSidebarOpen(true)}
-            className="p-3 bg-white rounded-2xl border border-slate-200 shadow-sm md:hidden hover:bg-slate-50 transition-all active:scale-95"
-          >
-            <Menu size={20} className="text-slate-900" />
+            <button
+              type="button"
+              onClick={() => setIsSidebarOpen(true)}
+              className="p-3 bg-white rounded-xl border border-hairline shadow-sm md:hidden hover:bg-accent-light transition-all active:scale-95"
+              aria-label="Mở menu"
+            >
+            <Menu size={20} className="text-ink" />
           </button>
 
           <div className="flex items-center gap-2 md:gap-4 ml-auto">
              <div className="text-right hidden xs:block">
-              <p className="text-sm font-bold text-slate-900 dark:text-slate-100 leading-none truncate max-w-[120px] md:max-w-none">{user?.displayName || 'Admin'}</p>
-              <p className="text-[10px] text-slate-500 mt-1 uppercase font-black tracking-tighter">HỆ THỐNG QUẢN TRỊ</p>
+              <p className="text-sm font-bold text-ink dark:text-ink leading-none truncate max-w-[120px] md:max-w-none">{user?.displayName || 'Admin'}</p>
+              <p className="text-[10px] text-muted mt-1 uppercase font-black tracking-tighter">HỆ THỐNG QUẢN TRỊ</p>
             </div>
             <button
-              onClick={toggleTheme}
-              className="p-2.5 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-all active:scale-90"
-              title={theme === 'dark' ? 'Chế độ sáng' : 'Chế độ tối'}
+              type="button"
+              onClick={() => {
+                const idx = themes.indexOf(theme);
+                setTheme(themes[(idx + 1) % themes.length]);
+              }}
+              className="p-2.5 bg-card dark:bg-card rounded-xl border border-hairline shadow-sm hover:bg-accent-light dark:hover:bg-surface-dark-elevated transition-all active:scale-90"
+              title={themeConfig[theme].label}
+              aria-label={`Chuyển theme ${themeConfig[theme].label}`}
             >
-              {theme === 'dark' ? <Sun size={16} className="text-amber-500" /> : <Moon size={16} className="text-slate-500" />}
+              <span className="text-base leading-none">{themeConfig[theme].icon}</span>
             </button>
-            <button 
+            <button
+              type="button"
               onClick={() => logout()}
               className="group relative flex items-center"
+              title="Đăng xuất"
+              aria-label="Đăng xuất"
             >
               <img 
                 src={user?.photoURL || "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix"} 
                 alt="Avatar" 
-                className="w-10 h-10 md:w-11 md:h-11 rounded-2xl border-2 border-white shadow-xl group-hover:opacity-80 transition-all"
+                className="w-10 h-10 md:w-11 md:h-11 rounded-xl border-2 border-white shadow-xl group-hover:opacity-80 transition-all"
               />
             </button>
           </div>
