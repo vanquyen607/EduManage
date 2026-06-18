@@ -193,11 +193,16 @@ export default function DashboardOverview() {
 
   const [activeChart, setActiveChart] = useState<'month' | 'class'>('month');
 
+  const activeStudents = students.filter(s => s.status === StudentStatus.ACTIVE).length;
+  const paidInvoices = invoices.filter(i => i.status === InvoiceStatus.PAID).length;
+  const totalInvoices = invoices.length;
+  const paidRatio = totalInvoices > 0 ? Math.round((paidInvoices / totalInvoices) * 100) : 0;
+
   const statCards = [
-    { label: 'TỔNG HỌC SINH', value: stats.totalStudents, icon: Users, color: 'bg-slate-900', trend: '+12%', sub: 'Học viên active' },
-    { label: 'LỚP ĐÀO TẠO', value: stats.activeClasses, icon: GraduationCap, color: 'bg-slate-900', trend: 'ỔN ĐỊNH', sub: 'Chương trình chạy' },
+    { label: 'TỔNG HỌC SINH', value: stats.totalStudents, icon: Users, color: 'bg-slate-900', trend: `${activeStudents} ĐANG HỌC`, sub: `${stats.totalStudents - activeStudents} inactive` },
+    { label: 'LỚP ĐÀO TẠO', value: stats.activeClasses, icon: GraduationCap, color: 'bg-slate-900', trend: 'ĐANG HOẠT ĐỘNG', sub: 'Chương trình chạy' },
     { label: 'HÓA ĐƠN CHỜ', value: stats.pendingInvoices, icon: AlertCircle, color: 'bg-red-500', trend: stats.pendingInvoices > 0 ? 'CẦN XỬ LÝ' : 'XONG', sub: 'Chưa thu tiền' },
-    { label: 'DOANH THU TỔNG', value: formatCurrency(totalRevenue), icon: DollarSign, color: 'bg-accent', trend: '+18.4%', sub: 'Dòng tiền hệ thống' },
+    { label: 'DOANH THU TỔNG', value: formatCurrency(totalRevenue), icon: DollarSign, color: 'bg-accent', trend: `ĐÃ THU ${paidRatio}%`, sub: 'Dòng tiền hệ thống' },
   ];
 
   const pendingInvoicesList = invoices.filter(i => i.status === InvoiceStatus.PENDING).slice(0, 3);

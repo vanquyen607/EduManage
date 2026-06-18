@@ -5,8 +5,10 @@ import { Class } from '@/src/types';
 import { formatCurrency } from '@/src/lib/utils';
 import Modal from '@/src/components/ui/Modal';
 import ClassForm from './ClassForm';
+import { useToast } from '@/src/lib/toast';
 
 export default function ClassList() {
+  const { toast } = useToast();
   const [classes, setClasses] = useState<Class[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -26,9 +28,10 @@ export default function ClassList() {
   const handleDelete = async (id: string) => {
     try {
       await classService.delete(id);
+      toast('Đã xóa lớp học!', 'success');
       fetchData();
     } catch (err) {
-      console.error(err);
+      toast('Có lỗi khi xóa lớp học!', 'error');
     }
   };
 

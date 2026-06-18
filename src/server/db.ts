@@ -1,7 +1,10 @@
 import pg from 'pg';
 
+const isRemote = !!process.env.DATABASE_URL;
+
 const pool = new pg.Pool({
-  connectionString: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/edumanage',
+  connectionString: isRemote ? process.env.DATABASE_URL : 'postgresql://postgres:postgres@localhost:5432/edumanage',
+  ...(isRemote ? { ssl: { rejectUnauthorized: false } } : {}),
 });
 
 export async function initDb() {

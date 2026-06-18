@@ -78,6 +78,8 @@ export const api = {
   // Comments
   getComments: (studentId?: string) => request<any[]>(`/api/comments${studentId ? `?studentId=${studentId}` : ''}`),
   addComment: (data: any) => request<any>('/api/comments', { method: 'POST', body: JSON.stringify(data) }),
+  updateComment: (id: string, data: any) => request<any>(`/api/comments/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteComment: (id: string) => request<any>(`/api/comments/${id}`, { method: 'DELETE' }),
 
   // Settings
   getSettings: () => request<any>('/api/settings'),

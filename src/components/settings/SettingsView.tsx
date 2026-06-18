@@ -48,10 +48,7 @@ export default function SettingsView() {
 
   const menuItems = [
     { id: 'account', label: 'Tài khoản', icon: User },
-    { id: 'notifications', label: 'Thông báo', icon: Bell },
-    { id: 'security', label: 'Bảo mật', icon: Shield },
     { id: 'system', label: 'Hệ thống', icon: SettingsIcon },
-    { id: 'billing', label: 'Gói dịch vụ', icon: CreditCard },
   ];
 
   const handleClearData = async () => {

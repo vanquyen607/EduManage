@@ -45,6 +45,8 @@ export default function StudentList() {
 
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [reportStudent, setReportStudent] = useState<Student | null>(null);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [deletingStudentId, setDeletingStudentId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -79,10 +81,17 @@ export default function StudentList() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('Bạn có chắc chắn muốn xóa học sinh này?')) return;
+    setDeletingStudentId(id);
+    setIsDeleteConfirmOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!deletingStudentId) return;
     try {
-      await studentService.delete(id);
+      await studentService.delete(deletingStudentId);
       toast('Đã xóa học sinh!', 'success');
+      setIsDeleteConfirmOpen(false);
+      setDeletingStudentId(null);
       fetchData();
     } catch (err) {
       toast('Có lỗi khi xóa học sinh!', 'error');
@@ -561,6 +570,30 @@ export default function StudentList() {
             </div>
           </div>
         )}
+      </Modal>
+
+      <Modal
+        isOpen={isDeleteConfirmOpen}
+        onClose={() => setIsDeleteConfirmOpen(false)}
+        title="Xác nhận xóa"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-slate-600">Bạn có chắc chắn muốn xóa học sinh này? Hành động này không thể hoàn tác.</p>
+          <div className="flex gap-3">
+            <button
+              onClick={() => setIsDeleteConfirmOpen(false)}
+              className="flex-1 py-3 bg-slate-100 text-slate-700 rounded-xl font-bold hover:bg-slate-200 transition-all"
+            >
+              Hủy
+            </button>
+            <button
+              onClick={confirmDelete}
+              className="flex-1 py-3 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition-all shadow-lg shadow-red-100"
+            >
+              Xóa ngay
+            </button>
+          </div>
+        </div>
       </Modal>
     </div>
   );

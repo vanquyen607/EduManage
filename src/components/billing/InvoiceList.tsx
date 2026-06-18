@@ -130,9 +130,9 @@ export default function InvoiceList() {
   };
 
   const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    // Silent success for environment compatibility
-    console.log('Copied to clipboard: ' + text);
+    navigator.clipboard.writeText(text)
+      .then(() => toast('Đã sao chép vào clipboard!', 'success'))
+      .catch(() => toast('Không thể sao chép!', 'error'));
   };
 
   return (

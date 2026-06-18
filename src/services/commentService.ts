@@ -13,6 +13,12 @@ export const commentService = {
   async add(comment: Omit<Comment, 'id' | 'createdAt' | 'ownerId'>) {
     const result = await api.addComment(comment);
     return result.id;
+  },
+  async update(id: string, comment: Partial<Comment>) {
+    await api.updateComment(id, comment);
+  },
+  async delete(id: string) {
+    await api.deleteComment(id);
   }
 };
 

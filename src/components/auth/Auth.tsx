@@ -106,7 +106,7 @@ export default function Auth() {
                       {...(reg as any)('name')}
                       type="text" 
                       placeholder="Nguyễn Văn A"
-                      className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3.5 pl-12 pr-4 text-sm focus:bg-white focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition-all outline-none"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3.5 pl-12 pr-4 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition-all outline-none"
                     />
                   </div>
                   {(errors as any).name && <p className="text-[10px] text-red-500 font-medium ml-1">{(errors as any).name.message as string}</p>}
@@ -122,7 +122,7 @@ export default function Auth() {
                   {...reg('email')}
                   type="email" 
                   placeholder="admin@example.com"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3.5 pl-12 pr-4 text-sm focus:bg-white focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition-all outline-none"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3.5 pl-12 pr-4 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition-all outline-none"
                 />
               </div>
               {errors.email && <p className="text-[10px] text-red-500 font-medium ml-1">{errors.email.message as string}</p>}
@@ -136,7 +136,7 @@ export default function Auth() {
                   {...reg('password')}
                   type="password" 
                   placeholder="••••••••"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3.5 pl-12 pr-4 text-sm focus:bg-white focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition-all outline-none"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3.5 pl-12 pr-4 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition-all outline-none"
                 />
               </div>
               {errors.password && <p className="text-[10px] text-red-500 font-medium ml-1">{errors.password.message as string}</p>}
