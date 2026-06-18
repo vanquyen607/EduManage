@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
-import { query } from './db';
-import { authMiddleware, hashPassword, verifyPassword, generateToken } from './auth';
+import { query } from './db.js';
+import { authMiddleware, hashPassword, verifyPassword, generateToken } from './auth.js';
 import { z } from 'zod';
 import crypto from 'crypto';
 
