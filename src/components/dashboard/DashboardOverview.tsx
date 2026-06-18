@@ -347,7 +347,7 @@ export default function DashboardOverview() {
               </div>
             </div>
             <div className="h-[320px] -ml-4">
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height={320} minHeight={320}>
                 {activeChart === 'month' ? (
                   <AreaChart data={revenueByMonth}>
                     <defs>

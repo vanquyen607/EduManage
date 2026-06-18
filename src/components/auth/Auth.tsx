@@ -170,6 +170,7 @@ export default function Auth() {
           <p className="mt-8 text-center text-xs font-medium text-slate-400">
             {mode === 'login' ? 'Chưa có tài khoản?' : 'Đã có tài khoản?'}
             <button 
+              type="button"
               onClick={() => setMode(mode === 'login' ? 'register' : 'login')}
               className="ml-2 text-primary font-bold hover:underline"
             >

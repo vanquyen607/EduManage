@@ -17,11 +17,13 @@ import {
 import { cn } from '@/src/lib/utils';
 import { motion } from 'motion/react';
 import { useTheme } from '@/src/lib/themeContext';
+import { useToast } from '@/src/lib/toast';
 import { getCurrentUser, logout } from '@/src/lib/authStore';
 import { api } from '@/src/lib/api';
 
 export default function SettingsView() {
   const { theme, toggleTheme } = useTheme();
+  const { toast } = useToast();
   const user = getCurrentUser();
   const [activeTab, setActiveTab] = useState('account');
   const [loading, setLoading] = useState(false);
@@ -128,7 +130,7 @@ export default function SettingsView() {
                           alt="Avatar" 
                           className="w-24 h-24 rounded-[2rem] shadow-xl border-4 border-white"
                         />
-                        <button className="absolute -bottom-2 -right-2 bg-slate-900 text-white p-2 rounded-xl shadow-lg opacity-0 group-hover:opacity-100 transition-all">
+                        <button onClick={() => toast({ title: 'Tính năng đang phát triển', description: 'Cập nhật ảnh đại diện sẽ sớm ra mắt' })} className="absolute -bottom-2 -right-2 bg-slate-900 text-white p-2 rounded-xl shadow-lg opacity-0 group-hover:opacity-100 transition-all">
                            <Edit size={14} />
                         </button>
                       </div>
@@ -223,9 +225,9 @@ export default function SettingsView() {
                        </div>
                        <h4 className="text-lg font-bold">Xác thực 2 yếu tố (2FA)</h4>
                        <p className="text-xs text-slate-400 leading-relaxed">Tăng cường bảo mật bằng cách yêu cầu mã xác thực từ điện thoại mỗi khi bạn đăng nhập từ thiết bị lạ.</p>
-                       <button className="bg-white text-slate-900 px-6 py-3 rounded-xl text-[10px] font-black tracking-widest uppercase hover:bg-accent transition-all">
-                         KÍCH HOẠT NGAY
-                       </button>
+                        <button onClick={() => toast({ title: 'Tính năng đang phát triển', description: 'Xác thực 2FA sẽ sớm ra mắt' })} className="bg-white text-slate-900 px-6 py-3 rounded-xl text-[10px] font-black tracking-widest uppercase hover:bg-accent transition-all">
+                          KÍCH HOẠT NGAY
+                        </button>
                     </div>
                  </motion.div>
                )}

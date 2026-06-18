@@ -41,9 +41,17 @@ async function startServer() {
     });
   }
 
+  app.use((err: any, req: any, res: any, next: any) => {
+    console.error('Server error:', err.message);
+    res.status(500).json({ error: err.message || 'Internal server error' });
+  });
+
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`Server running on http://localhost:${PORT}`);
   });
 }
 
-startServer();
+process.on('uncaughtException', (err) => console.error('Uncaught:', err.message));
+process.on('unhandledRejection', (err: any) => console.error('Unhandled:', err.message));
+
+startServer().catch(err => console.error('Startup error:', err.message));

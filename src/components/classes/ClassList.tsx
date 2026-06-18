@@ -49,7 +49,7 @@ export default function ClassList() {
         <button 
           onClick={() => { setSelectedClass(undefined); setIsModalOpen(true); }}
           className="bg-slate-900 text-white px-6 py-3 rounded-xl text-[10px] font-black tracking-widest uppercase flex items-center gap-2 shadow-lg shadow-slate-200 hover:bg-slate-800 transition-all active:scale-95"
-         motion-layout
+         motion-layout="true"
         >
           <Plus size={14} />
           THÊM LỚP MỚI
