@@ -4,27 +4,10 @@ import {
   Check, 
   X, 
   Users, 
-  Search,
-  ChevronLeft,
-  ChevronRight,
   Save
 } from 'lucide-react';
 import { motion } from 'motion/react';
-import { 
-  collection, 
-  query, 
-  getDocs, 
-  onSnapshot, 
-  orderBy, 
-  limit,
-  addDoc,
-  serverTimestamp,
-  where,
-  updateDoc,
-  doc
-} from 'firebase/firestore';
-import { db, auth } from '@/src/lib/firebase';
-import { withOwner, addOwner } from '@/src/lib/firebaseUtils';
+import { api } from '@/src/lib/api';
 import { studentService } from '@/src/services/studentService';
 import { classService } from '@/src/services/classService';
 import { Student, Class, AttendanceStatus } from '@/src/types';
@@ -66,27 +49,14 @@ export default function AttendanceManager() {
     setIsLoading(true);
     try {
       const classStudents = students.filter(s => s.classId === selectedClass);
-      
-      // Fetch existing records for this date and class
-      const q = query(
-        withOwner(collection(db, 'attendance')),
-        where('classId', '==', selectedClass),
-        where('date', '==', selectedDate)
-      );
-      const snapshot = await getDocs(q);
+      const data = await api.getAttendance({ classId: selectedClass, date: selectedDate });
       const existing: Record<string, AttendanceStatus> = {};
-      
-      // Default all to present if no records found
       classStudents.forEach(s => {
         existing[s.id] = AttendanceStatus.PRESENT;
       });
-
-      // Override with existing records
-      snapshot.docs.forEach(doc => {
-        const data = doc.data();
-        existing[data.studentId] = data.status;
+      data.forEach((d: any) => {
+        existing[d.student_id] = d.status;
       });
-
       setAttendanceData(existing);
     } catch (err) {
       console.error("Error loading attendance:", err);
@@ -110,33 +80,17 @@ export default function AttendanceManager() {
       const dateObj = new Date(selectedDate);
       const classStudents = students.filter(s => s.classId === selectedClass);
       
-      for (const student of classStudents) {
+      await Promise.all(classStudents.map(student => {
         const status = attendanceData[student.id] || AttendanceStatus.PRESENT;
-        
-        // Find existing record to update or create
-        const q = query(
-          withOwner(collection(db, 'attendance')),
-          where('studentId', '==', student.id),
-          where('date', '==', selectedDate)
-        );
-        const snapshot = await getDocs(q);
-        
-        const record = {
+        return api.markAttendance({
           studentId: student.id,
           classId: selectedClass,
           date: selectedDate,
-          status: status,
+          status,
           month: dateObj.getMonth() + 1,
           year: dateObj.getFullYear()
-        };
-
-        if (!snapshot.empty) {
-          const docId = snapshot.docs[0].id;
-          await updateDoc(doc(db, 'attendance', docId), addOwner(record));
-        } else {
-          await addDoc(collection(db, 'attendance'), addOwner(record));
-        }
-      }
+        });
+      }));
       
       toast('Đã lưu điểm danh thành công!', 'success');
     } catch (err) {

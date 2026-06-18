@@ -1,32 +1,31 @@
-import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, orderBy, serverTimestamp } from 'firebase/firestore';
-import { db } from '@/src/lib/firebase';
-import { withOwner, addOwner } from '@/src/lib/firebaseUtils';
+import { api } from '@/src/lib/api';
 import { Notification } from '@/src/types';
-
-const COLLECTION_NAME = 'notifications';
 
 export const notificationService = {
   async getAll() {
-    const q = query(withOwner(collection(db, COLLECTION_NAME)), orderBy('createdAt', 'desc'));
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Notification));
+    const data = await api.getNotifications();
+    return data.map(mapNotification);
   },
-
   async add(notif: Omit<Notification, 'id' | 'createdAt' | 'ownerId'>) {
-    const docRef = await addDoc(collection(db, COLLECTION_NAME), addOwner({
-      ...notif,
-      createdAt: new Date().toISOString() // Using string date for stability
-    }));
-    return docRef.id;
+    const result = await api.addNotification(notif);
+    return result.id;
   },
-
   async update(id: string, notif: Partial<Notification>) {
-    const docRef = doc(db, COLLECTION_NAME, id);
-    await updateDoc(docRef, addOwner(notif));
+    await api.updateNotification(id, notif);
   },
-
   async delete(id: string) {
-    const docRef = doc(db, COLLECTION_NAME, id);
-    await deleteDoc(docRef);
+    await api.deleteNotification(id);
   }
 };
+
+function mapNotification(d: any): Notification {
+  return {
+    id: d.id,
+    title: d.title,
+    timeLabel: d.time_label || '',
+    status: d.status || 'pending',
+    type: d.type || 'clock',
+    ownerId: d.owner_id,
+    createdAt: d.created_at || '',
+  };
+}

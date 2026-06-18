@@ -6,24 +6,12 @@ import {
   Search, 
   Trash2, 
   Edit, 
-  ChevronRight, 
   Star,
   TrendingUp,
   FileText,
   Download
 } from 'lucide-react';
-import { db, auth } from '@/src/lib/firebase';
-import { 
-  collection, 
-  addDoc, 
-  onSnapshot, 
-  query, 
-  deleteDoc, 
-  doc, 
-  where,
-  updateDoc 
-} from 'firebase/firestore';
-import { withOwner, addOwner } from '@/src/lib/firebaseUtils';
+import { api } from '@/src/lib/api';
 import { Student, Class, Grade } from '@/src/types';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/src/lib/utils';
@@ -75,62 +63,90 @@ export default function GradeManager() {
     setIsAddModalOpen(true);
   };
 
-  useEffect(() => {
-    const uid = auth.currentUser?.uid;
-    if (!uid) return;
-
-    const qGrades = query(collection(db, 'grades'), where('ownerId', '==', uid));
-    const qStudents = query(collection(db, 'students'), where('ownerId', '==', uid));
-    const qClasses = query(collection(db, 'classes'), where('ownerId', '==', uid));
-
-    const unsubGrades = onSnapshot(qGrades, (snap) => {
-      setGrades(snap.docs.map(d => ({ id: d.id, ...d.data() } as Grade)));
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const [gData, sData, cData] = await Promise.all([
+        api.getGrades(),
+        api.getStudents(),
+        api.getClasses(),
+      ]);
+      setGrades(gData.map((d: any) => ({
+        id: d.id,
+        studentId: d.student_id,
+        classId: d.class_id,
+        subject: d.subject,
+        score: d.score,
+        weight: d.weight,
+        date: d.date || '',
+        ownerId: d.owner_id,
+        note: d.note || '',
+      })));
+      setStudents(sData.map((d: any) => ({
+        id: d.id,
+        name: d.name,
+        birthDate: d.birth_date || '',
+        gender: d.gender || 'other',
+        classId: d.class_id || '',
+        parentName: d.parent_name || '',
+        parentPhone: d.parent_phone || '',
+        parentEmail: d.parent_email || '',
+        email: d.email || '',
+        phone: d.phone || '',
+        address: d.address || '',
+        notes: d.notes || '',
+        status: d.status,
+        ownerId: d.owner_id,
+        joinDate: d.join_date || '',
+        createdAt: d.created_at || '',
+      })));
+      setClasses(cData.map((d: any) => ({
+        id: d.id,
+        name: d.name,
+        teacher: d.teacher || '',
+        feePerSession: d.fee_per_session || 0,
+        description: d.description || '',
+        color: d.color || '#6366f1',
+        ownerId: d.owner_id,
+        schedule: Array.isArray(d.schedule) ? d.schedule : [],
+      })));
+    } catch {
+      toast('Lỗi tải dữ liệu', 'error');
+    } finally {
       setLoading(false);
-    }, (err) => toast('Lỗi tải dữ liệu điểm', 'error'));
-    
-    const unsubStudents = onSnapshot(qStudents, (snap) => {
-      setStudents(snap.docs.map(d => ({ id: d.id, ...d.data() } as Student)));
-    }, (err) => toast('Lỗi tải dữ liệu học sinh', 'error'));
+    }
+  };
 
-    const unsubClasses = onSnapshot(qClasses, (snap) => {
-      setClasses(snap.docs.map(d => ({ id: d.id, ...d.data() } as Class)));
-    }, (err) => toast('Lỗi tải dữ liệu lớp học', 'error'));
-
-    return () => {
-      unsubGrades();
-      unsubStudents();
-      unsubClasses();
-    };
+  useEffect(() => {
+    fetchData();
   }, []);
 
   const onGradeSubmit = async (data: GradeFormData) => {
     const student = students.find(s => s.id === data.studentId);
-    
-    const gradeData = {
-      ...data,
-      classId: student?.classId || '',
-    };
+    const gradeData = { ...data, classId: student?.classId || '' };
 
     try {
       if (editingGrade) {
-        await updateDoc(doc(db, 'grades', editingGrade.id), addOwner(gradeData));
+        await api.updateGrade(editingGrade.id, gradeData);
         toast('Cập nhật điểm thành công!', 'success');
       } else {
-        await addDoc(collection(db, 'grades'), addOwner(gradeData));
+        await api.addGrade(gradeData);
         toast('Thêm điểm thành công!', 'success');
       }
       setIsAddModalOpen(false);
       setEditingGrade(null);
-    } catch (error) {
+      fetchData();
+    } catch {
       toast('Có lỗi xảy ra khi lưu điểm!', 'error');
     }
   };
 
   const handleDeleteGrade = async (id: string) => {
     try {
-      await deleteDoc(doc(db, 'grades', id));
+      await api.deleteGrade(id);
       toast('Đã xóa điểm!', 'success');
-    } catch (error) {
+      fetchData();
+    } catch {
       toast('Có lỗi xảy ra khi xóa điểm!', 'error');
     }
   };

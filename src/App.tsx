@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Navbar from './components/layout/Navbar';
 import DashboardOverview from './components/dashboard/DashboardOverview';
 import StudentList from './components/students/StudentList';
@@ -13,18 +13,16 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Menu, Sun, Moon } from 'lucide-react';
 import { cn } from './lib/utils';
 import { useTheme } from './lib/themeContext';
-
-import { auth } from './lib/firebase';
-import { onAuthStateChanged, User } from 'firebase/auth';
+import { useAuth, logout, initAuth } from './lib/authStore';
 
 export default function App() {
   const { theme, toggleTheme } = useTheme();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const user = useAuth();
 
-  React.useEffect(() => {
+  useEffect(() => {
     const handleChangeTab = (e: any) => {
       setActiveTab(e.detail);
     };
@@ -34,11 +32,8 @@ export default function App() {
     };
   }, []);
 
-  React.useEffect(() => {
-    return onAuthStateChanged(auth, (u) => {
-      setUser(u);
-      setLoading(false);
-    });
+  useEffect(() => {
+    initAuth().then(() => setLoading(false));
   }, []);
 
   if (loading) return <div className="h-screen flex items-center justify-center font-sans text-slate-400">Đang tải dữ liệu...</div>;
@@ -93,7 +88,7 @@ export default function App() {
 
           <div className="flex items-center gap-2 md:gap-4 ml-auto">
              <div className="text-right hidden xs:block">
-              <p className="text-sm font-bold text-slate-900 dark:text-slate-100 leading-none truncate max-w-[120px] md:max-w-none">{user.displayName || 'Admin'}</p>
+              <p className="text-sm font-bold text-slate-900 dark:text-slate-100 leading-none truncate max-w-[120px] md:max-w-none">{user?.displayName || 'Admin'}</p>
               <p className="text-[10px] text-slate-500 mt-1 uppercase font-black tracking-tighter">HỆ THỐNG QUẢN TRỊ</p>
             </div>
             <button
@@ -104,11 +99,11 @@ export default function App() {
               {theme === 'dark' ? <Sun size={16} className="text-amber-500" /> : <Moon size={16} className="text-slate-500" />}
             </button>
             <button 
-              onClick={() => auth.signOut()}
+              onClick={() => logout()}
               className="group relative flex items-center"
             >
               <img 
-                src={user.photoURL || "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix"} 
+                src={user?.photoURL || "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix"} 
                 alt="Avatar" 
                 className="w-10 h-10 md:w-11 md:h-11 rounded-2xl border-2 border-white shadow-xl group-hover:opacity-80 transition-all"
               />

@@ -1,29 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { 
-  signInWithPopup, 
-  signInWithRedirect,
-  getRedirectResult,
-  GoogleAuthProvider, 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword, 
-  updateProfile 
-} from 'firebase/auth';
-import { auth } from '@/src/lib/firebase';
 import { motion, AnimatePresence } from 'motion/react';
 import { GraduationCap, Mail, Lock, User, ArrowRight, Loader2 } from 'lucide-react';
 import { cn } from '@/src/lib/utils';
 import { authSchema, registerSchema } from '@/src/lib/validation';
+import { login, register as registerUser } from '@/src/lib/authStore';
 
 export default function Auth() {
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    getRedirectResult(auth).catch(() => {});
-  }, []);
 
   const schema = mode === 'register' ? registerSchema : authSchema;
 
@@ -36,41 +23,14 @@ export default function Auth() {
     reset({ email: '', password: '', name: '' } as any);
   }, [mode, reset]);
 
-  const handleGoogleLogin = async () => {
-    const provider = new GoogleAuthProvider();
-    setLoading(true);
-    setError(null);
-    try {
-      await signInWithPopup(auth, provider);
-    } catch (err: any) {
-      if (err.code === 'auth/popup-blocked' || err.code === 'auth/popup-closed-by-user') {
-        try {
-          await signInWithRedirect(auth, provider);
-        } catch {
-          setError('Trình duyệt chặn cửa sổ đăng nhập. Vui lòng cho phép popup hoặc thử đăng nhập bằng email.');
-        }
-      } else if (err.code === 'auth/unauthorized-domain') {
-        setError('Domain chưa được cấp phép. Vui lòng liên hệ quản trị viên.');
-      } else if (err.code === 'auth/operation-not-allowed') {
-        setError('Đăng nhập Google chưa được bật. Vui lòng kiểm tra cấu hình Firebase.');
-      } else {
-        setError(err.message);
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleAuthSubmit = async (data: any) => {
     setLoading(true);
     setError(null);
-
     try {
       if (mode === 'login') {
-        await signInWithEmailAndPassword(auth, data.email, data.password);
+        await login(data.email, data.password);
       } else {
-        const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
-        await updateProfile(userCredential.user, { displayName: data.name });
+        await registerUser(data.email, data.password, data.name);
       }
     } catch (err: any) {
       setError(err.message || 'Có lỗi xảy ra, vui lòng thử lại.');
@@ -206,25 +166,6 @@ export default function Auth() {
               )}
             </button>
           </form>
-
-          <div className="relative my-8">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-100" />
-            </div>
-            <div className="relative flex justify-center text-[10px] uppercase font-black tracking-widest text-slate-300">
-              <span className="bg-white px-4">HOẶC</span>
-            </div>
-          </div>
-
-          <button 
-            type="button"
-            onClick={handleGoogleLogin}
-            disabled={loading}
-            className="w-full flex items-center justify-center gap-3 bg-white border border-slate-200 hover:border-slate-400 text-slate-900 font-bold py-3.5 px-6 rounded-2xl transition-all shadow-sm active:scale-[0.98] disabled:opacity-50"
-          >
-            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" className="w-5 h-5" alt="Google" />
-            <span className="text-[11px] font-black tracking-widest uppercase">Tiếp tục với Google</span>
-          </button>
 
           <p className="mt-8 text-center text-xs font-medium text-slate-400">
             {mode === 'login' ? 'Chưa có tài khoản?' : 'Đã có tài khoản?'}

@@ -2,41 +2,25 @@ import express from "express";
 import { createServer as createViteServer } from "vite";
 import path from "path";
 import { fileURLToPath } from "url";
+import cors from "cors";
+import routes from "./src/server/routes.js";
+import { initDb } from "./src/server/db.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 async function startServer() {
+  await initDb();
+
   const app = express();
-  const PORT = 3000;
+  const PORT = parseInt(process.env.PORT || '3000');
 
+  app.use(cors());
   app.use(express.json());
+  app.use(routes);
 
-  // API Routes
   app.get("/api/health", (req, res) => {
     res.json({ status: "ok" });
-  });
-
-  // Mock Payment Integration
-  // In a real app, this would use Stripe or another provider
-  app.post("/api/payments/create-session", (req, res) => {
-    const { invoiceId, amount } = req.body;
-    
-    if (!invoiceId || !amount) {
-      return res.status(400).json({ error: "Missing invoiceId or amount" });
-    }
-
-    // Return a mock checkout URL
-    res.json({
-      sessionId: `mock_session_${Date.now()}`,
-      url: `/payment-mock?invoiceId=${invoiceId}&amount=${amount}`
-    });
-  });
-
-  app.post("/api/payments/verify", (req, res) => {
-    const { sessionId } = req.body;
-    // Simulate successful verification
-    res.json({ status: "success", transactionId: `txn_${Date.now()}` });
   });
 
   // Vite middleware for development

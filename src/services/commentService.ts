@@ -1,31 +1,30 @@
-import { collection, addDoc, getDocs, query, where, orderBy } from 'firebase/firestore';
-import { db } from '@/src/lib/firebase';
-import { withOwner, addOwner } from '@/src/lib/firebaseUtils';
+import { api } from '@/src/lib/api';
 import { Comment } from '@/src/types';
-
-const COLLECTION_NAME = 'comments';
 
 export const commentService = {
   async getByStudent(studentId: string) {
-    const q = query(
-      withOwner(collection(db, COLLECTION_NAME)),
-      where('studentId', '==', studentId),
-      orderBy('createdAt', 'desc')
-    );
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Comment));
+    const data = await api.getComments(studentId);
+    return data.map(mapComment);
   },
-
   async getAll() {
-    const snapshot = await getDocs(withOwner(collection(db, COLLECTION_NAME)));
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Comment));
+    const data = await api.getComments();
+    return data.map(mapComment);
   },
-
   async add(comment: Omit<Comment, 'id' | 'createdAt' | 'ownerId'>) {
-    const docRef = await addDoc(collection(db, COLLECTION_NAME), addOwner({
-      ...comment,
-      createdAt: new Date().toISOString()
-    }));
-    return docRef.id;
+    const result = await api.addComment(comment);
+    return result.id;
   }
 };
+
+function mapComment(d: any): Comment {
+  return {
+    id: d.id,
+    studentId: d.student_id,
+    month: d.month,
+    year: d.year,
+    content: d.content || '',
+    rating: d.rating || 0,
+    ownerId: d.owner_id,
+    createdAt: d.created_at || '',
+  };
+}

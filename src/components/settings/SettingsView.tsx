@@ -14,15 +14,15 @@ import {
   Sun,
   Edit
 } from 'lucide-react';
-import { auth } from '@/src/lib/firebase';
-import { updateProfile, updateEmail } from 'firebase/auth';
 import { cn } from '@/src/lib/utils';
 import { motion } from 'motion/react';
 import { useTheme } from '@/src/lib/themeContext';
+import { getCurrentUser, logout } from '@/src/lib/authStore';
+import { api } from '@/src/lib/api';
 
 export default function SettingsView() {
   const { theme, toggleTheme } = useTheme();
-  const user = auth.currentUser;
+  const user = getCurrentUser();
   const [activeTab, setActiveTab] = useState('account');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ text: string, type: 'success' | 'error' } | null>(null);
@@ -32,18 +32,10 @@ export default function SettingsView() {
 
   const handleUpdateAccount = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) return;
-    
     setLoading(true);
     setMessage(null);
-    
     try {
-      if (displayName !== user.displayName) {
-        await updateProfile(user, { displayName });
-      }
-      if (email !== user.email) {
-        await updateEmail(user, email);
-      }
+      const result = await api.updateProfile({ displayName, email });
       setMessage({ text: 'Cập nhật thành công!', type: 'success' });
     } catch (err: any) {
       setMessage({ text: err.message, type: 'error' });
@@ -66,10 +58,8 @@ export default function SettingsView() {
     if (!window.confirm('Bạn có chắc chắn muốn xóa toàn bộ dữ liệu? Hành động này không thể hoàn tác.')) return;
     setLoadingAction('clearing');
     try {
-      const { demoService } = await import('@/src/lib/demoService');
-      await demoService.clearAllData();
+      await api.clearData();
       setMessage({ text: 'Đã xóa toàn bộ dữ liệu thành công!', type: 'success' });
-      // Reload page to refresh all state
       setTimeout(() => window.location.reload(), 1500);
     } catch (err: any) {
       setMessage({ text: 'Lỗi: ' + err.message, type: 'error' });
@@ -81,10 +71,8 @@ export default function SettingsView() {
   const handleAddSampleData = async () => {
     setLoadingAction('adding');
     try {
-      const { demoService } = await import('@/src/lib/demoService');
-      await demoService.addSampleData();
+      await api.seedData();
       setMessage({ text: 'Đã thêm dữ liệu mẫu thành công!', type: 'success' });
-      // Reload page to refresh all state
       setTimeout(() => window.location.reload(), 1500);
     } catch (err: any) {
       setMessage({ text: 'Lỗi: ' + err.message, type: 'error' });
@@ -119,7 +107,7 @@ export default function SettingsView() {
               <hr className="border-slate-100 mb-4" />
            </div>
            <button 
-             onClick={() => auth.signOut()}
+             onClick={() => logout()}
              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-black tracking-widest uppercase text-red-500 hover:bg-red-50 transition-all mt-auto"
            >
               <LogOut size={16} />

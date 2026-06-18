@@ -1,29 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Calendar as CalendarIcon, 
   Clock, 
-  MapPin, 
   User,
   Plus,
   Trash2,
-  ChevronLeft,
-  ChevronRight
 } from 'lucide-react';
-import { db, auth } from '@/src/lib/firebase';
-import { 
-  collection, 
-  onSnapshot, 
-  query, 
-  updateDoc, 
-  doc,
-  where
-} from 'firebase/firestore';
+import { api } from '@/src/lib/api';
 import { Class, ClassSchedule } from '@/src/types';
 import { motion } from 'motion/react';
 import { cn } from '@/src/lib/utils';
 import Modal from '@/src/components/ui/Modal';
 import { CardSkeleton } from '@/src/components/ui/Skeleton';
-import { withOwner, addOwner } from '@/src/lib/firebaseUtils';
 import { useToast } from '@/src/lib/toast';
 
 const DAYS = ['Chủ nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
@@ -43,28 +31,37 @@ export default function ScheduleManager() {
     teacher: ''
   });
 
-  useEffect(() => {
-    const uid = auth.currentUser?.uid;
-    if (!uid) return;
-
-    const q = query(collection(db, 'classes'), where('ownerId', '==', uid));
-    return onSnapshot(q, (snap) => {
-      setClasses(snap.docs.map(d => ({ id: d.id, ...d.data() } as Class)));
-      setIsLoading(false);
-    }, (err) => {
+  const fetchClasses = useCallback(async () => {
+    try {
+      const data = await api.getClasses();
+      setClasses(data.map((d: any) => ({
+        id: d.id,
+        name: d.name,
+        teacher: d.teacher || '',
+        feePerSession: d.fee_per_session || 0,
+        description: d.description || '',
+        color: d.color || '#6366f1',
+        ownerId: d.owner_id,
+        schedule: Array.isArray(d.schedule) ? d.schedule : [],
+      })));
+    } catch {
       toast('Lỗi tải dữ liệu lịch học!', 'error');
+    } finally {
       setIsLoading(false);
-    });
-  }, []);
+    }
+  }, [toast]);
+
+  useEffect(() => {
+    fetchClasses();
+  }, [fetchClasses]);
 
   const handleUpdateSchedule = async (classId: string, updatedSchedule: ClassSchedule[]) => {
     try {
-      await updateDoc(doc(db, 'classes', classId), addOwner({
-        schedule: updatedSchedule
-      }));
+      await api.updateClass(classId, { schedule: updatedSchedule });
       setIsAddModalOpen(false);
       toast('Cập nhật lịch học thành công!', 'success');
-    } catch (err) {
+      fetchClasses();
+    } catch {
       toast('Lỗi khi cập nhật lịch học!', 'error');
     }
   };
@@ -79,7 +76,6 @@ export default function ScheduleManager() {
     const cls = classes.find(c => c.id === selectedClassId);
     if (!cls) return;
 
-    // Check for conflicts across all classes
     let conflictFound: { className: string; schedule: ClassSchedule } | null = null;
     
     for (const otherClass of classes) {
@@ -230,7 +226,7 @@ export default function ScheduleManager() {
                     }}
                     className="text-[10px] font-black text-accent uppercase tracking-widest hover:underline"
                    >
-                     + THÊM GIỜ
+                      + THÊM GIỜ
                    </button>
                 </div>
                 <div className="space-y-2">

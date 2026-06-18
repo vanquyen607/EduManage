@@ -15,8 +15,8 @@ import {
 } from 'lucide-react';
 import { cn } from '@/src/lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
-import { auth } from '@/src/lib/firebase';
 import { useTheme } from '@/src/lib/themeContext';
+import { getCurrentUser, logout } from '@/src/lib/authStore';
 
 interface NavbarProps {
   activeTab: string;
@@ -27,6 +27,7 @@ interface NavbarProps {
 
 export default function Navbar({ activeTab, setActiveTab, isOpen, onClose }: NavbarProps) {
   const { theme, toggleTheme } = useTheme();
+  const user = getCurrentUser();
   const menuItems = [
     { id: 'dashboard', label: 'TỔNG QUAN', icon: BarChart3 },
     { id: 'students', label: 'HỌC SINH', icon: Users },
@@ -38,7 +39,9 @@ export default function Navbar({ activeTab, setActiveTab, isOpen, onClose }: Nav
     { id: 'settings', label: 'CÀI ĐẶT', icon: Settings },
   ];
 
-  const user = auth.currentUser;
+  const handleLogout = () => {
+    logout();
+  };
 
   return (
     <>
@@ -160,7 +163,7 @@ export default function Navbar({ activeTab, setActiveTab, isOpen, onClose }: Nav
           </div>
           <button 
             id="logout-btn"
-            onClick={() => auth.signOut()}
+            onClick={handleLogout}
             className="flex items-center justify-center gap-2 w-full px-4 py-3 text-[10px] font-black tracking-widest text-slate-400 dark:text-slate-500 uppercase rounded-xl border border-slate-200 dark:border-slate-800 hover:border-red-200 dark:hover:border-red-900/50 hover:text-red-500 transition-all font-sans"
           >
             <LogOut size={14} />
