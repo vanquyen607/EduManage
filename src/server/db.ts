@@ -127,12 +127,16 @@ export async function initDb() {
   console.log('Database tables initialized');
 }
 
+function sanitize(params?: any[]) {
+  return (params || []).map(p => p === undefined ? null : p);
+}
+
 export async function query(text: string, params?: any[]) {
-  const result = await db.execute({ sql: text, args: params || [] });
+  const result = await db.execute({ sql: text, args: sanitize(params) });
   return { rows: result.rows as any[] };
 }
 
 export async function execute(text: string, params?: any[]) {
-  const result = await db.execute({ sql: text, args: params || [] });
+  const result = await db.execute({ sql: text, args: sanitize(params) });
   return result;
 }

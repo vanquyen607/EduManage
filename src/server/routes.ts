@@ -142,9 +142,14 @@ router.delete('/api/students/:id', authMiddleware, async (req: any, res: Respons
 });
 
 // ─── CLASSES ─────────────────────────────────────────
+function parseClass(c: any) {
+  if (typeof c.schedule === 'string') try { c.schedule = JSON.parse(c.schedule); } catch { c.schedule = []; }
+  return c;
+}
+
 router.get('/api/classes', authMiddleware, async (req: any, res: Response) => {
   const result = await query('SELECT * FROM classes WHERE owner_id = ? ORDER BY name ASC', [req.user.id]);
-  res.json(result.rows);
+  res.json(result.rows.map(parseClass));
 });
 
 router.post('/api/classes', authMiddleware, async (req: any, res: Response) => {
@@ -162,7 +167,7 @@ router.post('/api/classes', authMiddleware, async (req: any, res: Response) => {
     [id, req.user.id, name, teacher, feePerSession, description, color || '#6366f1', JSON.stringify(schedule || [])]
   );
   const result = await query('SELECT * FROM classes WHERE id = ?', [id]);
-  res.json(result.rows[0]);
+  res.json(parseClass(result.rows[0]));
 });
 
 router.put('/api/classes/:id', authMiddleware, async (req: any, res: Response) => {
@@ -172,11 +177,23 @@ router.put('/api/classes/:id', authMiddleware, async (req: any, res: Response) =
     schedule: z.array(z.object({ dayOfWeek: z.number().min(0).max(6), startTime: z.string(), endTime: z.string(), teacher: z.string().optional() })).optional(),
   }), req.body);
   if (!v.ok) return res.status(400).json({ error: v.error });
-  const { name, teacher, feePerSession, description, color, schedule } = v.data;
-  await query(
-    `UPDATE classes SET name=?, teacher=?, fee_per_session=?, description=?, color=?, schedule=? WHERE id=? AND owner_id=?`,
-    [name, teacher, feePerSession, description, color, JSON.stringify(schedule || []), req.params.id, req.user.id]
-  );
+  const fields = v.data as Record<string, any>;
+  const colMap: Record<string, string> = {
+    name: 'name', teacher: 'teacher', feePerSession: 'fee_per_session',
+    description: 'description', color: 'color',
+  };
+  const sets: string[] = [];
+  const vals: any[] = [];
+  for (const [key, col] of Object.entries(colMap)) {
+    if (fields[key] !== undefined) { sets.push(`${col}=?`); vals.push(fields[key]); }
+  }
+  if (fields.schedule !== undefined) {
+    sets.push('schedule=?');
+    vals.push(JSON.stringify(fields.schedule));
+  }
+  if (sets.length === 0) return res.status(400).json({ error: 'No fields to update' });
+  vals.push(req.params.id, req.user.id);
+  await query(`UPDATE classes SET ${sets.join(',')} WHERE id=? AND owner_id=?`, vals);
   res.json({ success: true });
 });
 
@@ -214,11 +231,16 @@ router.put('/api/grades/:id', authMiddleware, async (req: any, res: Response) =>
     score: z.number().min(0).max(10).optional(), weight: z.number().min(1).max(4).optional(), date: z.string().min(1).optional(), note: z.string().max(500).optional(),
   }), req.body);
   if (!v.ok) return res.status(400).json({ error: v.error });
-  const { studentId, classId, subject, score, weight, date, note } = v.data;
-  await query(
-    `UPDATE grades SET student_id=?, class_id=?, subject=?, score=?, weight=?, date=?, note=? WHERE id=? AND owner_id=?`,
-    [studentId, classId, subject, score, weight, date, note, req.params.id, req.user.id]
-  );
+  const fields = v.data as Record<string, any>;
+  const colMap: Record<string, string> = { studentId: 'student_id', classId: 'class_id', subject: 'subject', score: 'score', weight: 'weight', date: 'date', note: 'note' };
+  const sets: string[] = [];
+  const vals: any[] = [];
+  for (const [key, col] of Object.entries(colMap)) {
+    if (fields[key] !== undefined) { sets.push(`${col}=?`); vals.push(fields[key]); }
+  }
+  if (sets.length === 0) return res.status(400).json({ error: 'No fields to update' });
+  vals.push(req.params.id, req.user.id);
+  await query(`UPDATE grades SET ${sets.join(',')} WHERE id=? AND owner_id=?`, vals);
   res.json({ success: true });
 });
 
@@ -329,9 +351,16 @@ router.post('/api/notifications', authMiddleware, async (req: any, res: Response
 router.put('/api/notifications/:id', authMiddleware, async (req: any, res: Response) => {
   const v = validate(z.object({ title: z.string().min(2).max(200).optional(), timeLabel: z.string().min(1).max(100).optional(), status: z.string().min(1).optional(), type: z.string().min(1).optional() }), req.body);
   if (!v.ok) return res.status(400).json({ error: v.error });
-  const { title, timeLabel, status, type } = v.data;
-  await query('UPDATE notifications SET title=?, time_label=?, status=?, type=? WHERE id=? AND owner_id=?',
-    [title, timeLabel, status, type, req.params.id, req.user.id]);
+  const fields = v.data as Record<string, any>;
+  const colMap: Record<string, string> = { title: 'title', timeLabel: 'time_label', status: 'status', type: 'type' };
+  const sets: string[] = [];
+  const vals: any[] = [];
+  for (const [key, col] of Object.entries(colMap)) {
+    if (fields[key] !== undefined) { sets.push(`${col}=?`); vals.push(fields[key]); }
+  }
+  if (sets.length === 0) return res.status(400).json({ error: 'No fields to update' });
+  vals.push(req.params.id, req.user.id);
+  await query(`UPDATE notifications SET ${sets.join(',')} WHERE id=? AND owner_id=?`, vals);
   res.json({ success: true });
 });
 
@@ -370,8 +399,14 @@ router.post('/api/comments', authMiddleware, async (req: any, res: Response) => 
 router.put('/api/comments/:id', authMiddleware, async (req: any, res: Response) => {
   const v = validate(z.object({ content: z.string().max(2000).optional(), rating: z.number().min(0).max(5).optional() }), req.body);
   if (!v.ok) return res.status(400).json({ error: v.error });
-  const { content, rating } = v.data;
-  await query('UPDATE comments SET content=?, rating=? WHERE id=? AND owner_id=?', [content, rating, req.params.id, req.user.id]);
+  const fields = v.data as Record<string, any>;
+  const sets: string[] = [];
+  const vals: any[] = [];
+  if (fields.content !== undefined) { sets.push('content=?'); vals.push(fields.content); }
+  if (fields.rating !== undefined) { sets.push('rating=?'); vals.push(fields.rating); }
+  if (sets.length === 0) return res.status(400).json({ error: 'No fields to update' });
+  vals.push(req.params.id, req.user.id);
+  await query(`UPDATE comments SET ${sets.join(',')} WHERE id=? AND owner_id=?`, vals);
   res.json({ success: true });
 });
 
