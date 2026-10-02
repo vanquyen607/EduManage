@@ -1,25 +1,13 @@
 import { api } from '@/src/lib/api';
-import { Invoice, InvoiceStatus, AttendanceStatus } from '@/src/types';
-import { attendanceService } from './attendanceService';
+import { Invoice, InvoiceStatus } from '@/src/types';
 
 export const billingService = {
   async getAll() {
     const data = await api.getInvoices();
     return data.map(mapInvoice);
   },
-  async generateInvoice(studentId: string, month: number, year: number, feePerSession: number) {
-    const attendance = await attendanceService.getByMonth(studentId, month, year);
-    const presentCount = attendance.filter(a => a.status === AttendanceStatus.PRESENT).length;
-    if (presentCount === 0) return null;
-    const totalAmount = presentCount * feePerSession;
-    const result = await api.addInvoice({
-      studentId,
-      month,
-      year,
-      sessionCount: presentCount,
-      totalAmount,
-    });
-    return result.id;
+  async generateMonthlyInvoices(month: number, year: number) {
+    return api.generateInvoices(month, year);
   },
   async markAsPaid(invoiceId: string) {
     await api.updateInvoice(invoiceId, { status: InvoiceStatus.PAID, paidAt: new Date().toISOString() });

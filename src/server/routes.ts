@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { query } from './db.js';
+import { query, batch } from './db.js';
 import { authMiddleware, hashPassword, verifyPassword, generateToken } from './auth.js';
 import { z } from 'zod';
 import crypto from 'crypto';
@@ -302,24 +302,109 @@ router.post('/api/invoices', authMiddleware, async (req: any, res: Response) => 
   }), req.body);
   if (!v.ok) return res.status(400).json({ error: v.error });
   const { studentId, month, year, sessionCount, totalAmount } = v.data;
-  const id = uuid();
-  await query(
-    `INSERT INTO invoices (id, owner_id, student_id, month, year, session_count, total_amount, status, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [id, req.user.id, studentId, month, year, sessionCount, totalAmount, 'pending', new Date().toISOString()]
+
+  const existing = await query(
+    'SELECT * FROM invoices WHERE owner_id=? AND student_id=? AND month=? AND year=?',
+    [req.user.id, studentId, month, year]
   );
+  if (existing.rows.length > 0) {
+    return res.status(409).json({ error: 'Hóa đơn cho kỳ này đã tồn tại', invoice: existing.rows[0] });
+  }
+
+  const id = uuid();
+  try {
+    await query(
+      `INSERT INTO invoices (id, owner_id, student_id, month, year, session_count, total_amount, status, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [id, req.user.id, studentId, month, year, sessionCount, totalAmount, 'pending', new Date().toISOString()]
+    );
+  } catch (e: any) {
+    if (String(e?.message || '').includes('UNIQUE')) {
+      return res.status(409).json({ error: 'Hóa đơn cho kỳ này đã tồn tại' });
+    }
+    throw e;
+  }
   const result = await query('SELECT * FROM invoices WHERE id = ?', [id]);
   res.json(result.rows[0]);
 });
 
-router.put('/api/invoices/:id', authMiddleware, async (req: any, res: Response) => {
-  const v = validate(z.object({ status: z.string().optional(), paidAt: z.string().optional() }), req.body);
+router.post('/api/invoices/generate', authMiddleware, async (req: any, res: Response) => {
+  const v = validate(z.object({
+    month: z.number().min(1).max(12), year: z.number().min(2020).max(2100),
+  }), req.body);
   if (!v.ok) return res.status(400).json({ error: v.error });
-  const { status, paidAt } = v.data;
-  await query(
-    'UPDATE invoices SET status=?, paid_at=? WHERE id=? AND owner_id=?',
-    [status || 'pending', paidAt || new Date().toISOString(), req.params.id, req.user.id]
+  const { month, year } = v.data;
+
+  const studentsRes = await query(
+    `SELECT s.id, s.class_id, c.fee_per_session
+     FROM students s LEFT JOIN classes c ON c.id = s.class_id
+     WHERE s.owner_id = ? AND s.status = 'active'`,
+    [req.user.id]
   );
+  const existingRes = await query(
+    'SELECT student_id FROM invoices WHERE owner_id=? AND month=? AND year=?',
+    [req.user.id, month, year]
+  );
+  const existing = new Set(existingRes.rows.map((r: any) => r.student_id));
+
+  let skipped = 0;
+  let noAttendance = 0;
+  const stmts: { sql: string; args: any[] }[] = [];
+  const now = new Date().toISOString();
+
+  for (const s of studentsRes.rows) {
+    if (existing.has(s.id)) { skipped++; continue; }
+    const fee = Number(s.fee_per_session || 0);
+    if (!fee) { skipped++; continue; }
+
+    const att = await query(
+      `SELECT COUNT(*) AS cnt FROM attendance
+       WHERE owner_id=? AND student_id=? AND month=? AND year=? AND status='present'`,
+      [req.user.id, s.id, month, year]
+    );
+    const present = Number(att.rows[0].cnt) || 0;
+    if (present === 0) { noAttendance++; continue; }
+
+    stmts.push({
+      sql: `INSERT OR IGNORE INTO invoices
+            (id, owner_id, student_id, month, year, session_count, total_amount, status, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?)`,
+      args: [uuid(), req.user.id, s.id, month, year, present, present * fee, now],
+    });
+  }
+
+  if (stmts.length > 0) await batch(stmts);
+  res.json({ created: stmts.length, skipped, noAttendance });
+});
+
+router.put('/api/invoices/:id', authMiddleware, async (req: any, res: Response) => {
+  const v = validate(z.object({
+    status: z.enum(['pending', 'paid']).optional(),
+    paidAt: z.string().optional(),
+    totalAmount: z.number().min(0).max(1000000000).optional(),
+    sessionCount: z.number().min(0).max(100000).optional(),
+  }), req.body);
+  if (!v.ok) return res.status(400).json({ error: v.error });
+  const { status, paidAt, totalAmount, sessionCount } = v.data;
+
+  const current = await query('SELECT status FROM invoices WHERE id=? AND owner_id=?', [req.params.id, req.user.id]);
+  if (current.rows.length === 0) return res.status(404).json({ error: 'Invoice not found' });
+
+  const sets: string[] = [];
+  const vals: any[] = [];
+  if (totalAmount !== undefined) { sets.push('total_amount=?'); vals.push(totalAmount); }
+  if (sessionCount !== undefined) { sets.push('session_count=?'); vals.push(sessionCount); }
+
+  const newStatus = status !== undefined ? status : current.rows[0].status;
+  if (status !== undefined) { sets.push('status=?'); vals.push(status); }
+  if (status !== undefined || paidAt !== undefined) {
+    const paidValue = newStatus === 'paid' ? (paidAt || new Date().toISOString()) : null;
+    sets.push('paid_at=?'); vals.push(paidValue);
+  }
+
+  if (sets.length === 0) return res.status(400).json({ error: 'No fields to update' });
+  vals.push(req.params.id, req.user.id);
+  await query(`UPDATE invoices SET ${sets.join(', ')} WHERE id=? AND owner_id=?`, vals);
   const result = await query('SELECT * FROM invoices WHERE id=?', [req.params.id]);
   res.json(result.rows[0]);
 });

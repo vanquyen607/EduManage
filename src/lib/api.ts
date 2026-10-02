@@ -66,6 +66,11 @@ export const api = {
   // Invoices
   getInvoices: () => request<any[]>('/api/invoices'),
   addInvoice: (data: any) => request<any>('/api/invoices', { method: 'POST', body: JSON.stringify(data) }),
+  generateInvoices: (month: number, year: number) =>
+    request<{ created: number; skipped: number; noAttendance: number }>('/api/invoices/generate', {
+      method: 'POST',
+      body: JSON.stringify({ month, year }),
+    }),
   updateInvoice: (id: string, data: any) => request<any>(`/api/invoices/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   deleteInvoice: (id: string) => request<any>(`/api/invoices/${id}`, { method: 'DELETE' }),
 

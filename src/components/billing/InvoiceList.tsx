@@ -12,12 +12,13 @@ import {
   QrCode,
   X,
   Copy,
-  Settings
+  Settings,
+  FileText
 } from 'lucide-react';
 import { billingService } from '@/src/services/billingService';
 import { studentService } from '@/src/services/studentService';
 import { classService } from '@/src/services/classService';
-import { Invoice, Student, InvoiceStatus, StudentStatus } from '@/src/types';
+import { Invoice, Class, Student, InvoiceStatus, StudentStatus } from '@/src/types';
 import { cn, formatCurrency } from '@/src/lib/utils';
 import { motion } from 'motion/react';
 import Modal from '@/src/components/ui/Modal';
@@ -27,13 +28,18 @@ import BankSettingsForm from './BankSettingsForm';
 import Pagination, { usePagination } from '@/src/components/ui/Pagination';
 import { TableSkeleton } from '@/src/components/ui/Skeleton';
 import { exportToExcel } from '@/src/lib/exportUtils';
+import { buildInvoiceRows, exportInvoicesPDF } from '@/src/lib/invoiceExport';
 import { useToast } from '@/src/lib/toast';
+
+function slugName(s: string) {
+  return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/\s+/g, '-');
+}
 
 export default function InvoiceList() {
   const { toast } = useToast();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
-  const [classFeeMap, setClassFeeMap] = useState<Record<string, number>>({});
+  const [classList, setClassList] = useState<Class[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showSettings, setShowSettings] = useState(false);
   const [bankSettings, setBankSettings] = useState<BankSettings | null>(null);
@@ -45,6 +51,18 @@ export default function InvoiceList() {
   const [invoiceToDelete, setInvoiceToDelete] = useState<string | null>(null);
   const [editAmount, setEditAmount] = useState<number>(0);
   const [editStatus, setEditStatus] = useState<InvoiceStatus>(InvoiceStatus.PENDING);
+
+  const [isExportOpen, setIsExportOpen] = useState(false);
+  const [expMonth, setExpMonth] = useState<'all' | number>('all');
+  const [expYear, setExpYear] = useState<number>(new Date().getFullYear());
+  const [expStudent, setExpStudent] = useState<'all' | string>('all');
+  const [expStatus, setExpStatus] = useState<'all' | InvoiceStatus>('all');
+  const [expFormat, setExpFormat] = useState<'pdf' | 'excel'>('pdf');
+
+  const [isGenerateOpen, setIsGenerateOpen] = useState(false);
+  const [genMonth, setGenMonth] = useState<number>(new Date().getMonth() + 1);
+  const [genYear, setGenYear] = useState<number>(new Date().getFullYear());
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const { currentPage, totalPages, setCurrentPage, paginatedItems } = usePagination<Invoice>(invoices, 8);
 
@@ -72,9 +90,7 @@ export default function InvoiceList() {
       ]);
       setInvoices(iData);
       setStudents(sData);
-      const map: Record<string, number> = {};
-      cData.forEach(c => { map[c.id] = c.feePerSession; });
-      setClassFeeMap(map);
+      setClassList(cData);
     } catch (err) {
       console.error(err);
     } finally {
@@ -116,6 +132,10 @@ export default function InvoiceList() {
 
   const handleUpdateInvoice = async () => {
     if (!selectedInvoice) return;
+    if (editAmount < 0 || Number.isNaN(editAmount)) {
+      toast('Số tiền không hợp lệ!', 'error');
+      return;
+    }
     try {
       await billingService.update(selectedInvoice.id, {
         totalAmount: editAmount,
@@ -135,6 +155,95 @@ export default function InvoiceList() {
       .catch(() => toast('Không thể sao chép!', 'error'));
   };
 
+  const availablePeriods = React.useMemo(() => {
+    const map = new Map<string, { month: number; year: number }>();
+    invoices.forEach(i => map.set(`${i.year}-${i.month}`, { month: i.month, year: i.year }));
+    return Array.from(map.values()).sort((a, b) => b.year - a.year || b.month - a.month);
+  }, [invoices]);
+
+  const yearOptions = React.useMemo(() => {
+    const current = new Date().getFullYear();
+    const set = new Set<number>([current - 1, current, current + 1]);
+    invoices.forEach(i => set.add(i.year));
+    return Array.from(set).sort((a, b) => b - a);
+  }, [invoices]);
+
+  React.useEffect(() => {
+    if (expMonth !== 'all' && !availablePeriods.some(p => p.year === expYear && p.month === expMonth)) {
+      const fallback = availablePeriods[0];
+      if (fallback) setExpYear(fallback.year);
+    }
+  }, [availablePeriods, expMonth, expYear]);
+
+  const filteredExportInvoices = React.useMemo(() => invoices.filter(inv => {
+    if (expMonth !== 'all' && (inv.month !== expMonth || inv.year !== expYear)) return false;
+    if (expStudent !== 'all' && inv.studentId !== expStudent) return false;
+    if (expStatus !== 'all' && inv.status !== expStatus) return false;
+    return true;
+  }), [invoices, expMonth, expYear, expStudent, expStatus]);
+
+  const exportDescription = React.useMemo(() => {
+    const parts: string[] = [];
+    parts.push(expMonth === 'all' ? 'Tất cả các kỳ' : `Kỳ: Tháng ${expMonth}/${expYear}`);
+    if (expStudent !== 'all') {
+      parts.push(`Học viên: ${students.find(s => s.id === expStudent)?.name || ''}`);
+    }
+    if (expStatus !== 'all') parts.push(expStatus === InvoiceStatus.PAID ? 'Đã đóng' : 'Chờ thu');
+    return parts.join(' · ');
+  }, [expMonth, expYear, expStudent, expStatus, students]);
+
+  const handleExport = () => {
+    if (filteredExportInvoices.length === 0) {
+      toast('Không có hóa đơn nào khớp bộ lọc!', 'warning');
+      return;
+    }
+    try {
+      if (expFormat === 'pdf') {
+        exportInvoicesPDF(filteredExportInvoices, {
+          students,
+          classes: classList,
+          description: exportDescription,
+        });
+      } else {
+        const rows = buildInvoiceRows(filteredExportInvoices, { students, classes: classList });
+        const suffix = [
+          expMonth !== 'all' ? `thang-${expMonth}-${expYear}` : '',
+          expStudent !== 'all' ? slugName(students.find(s => s.id === expStudent)?.name || 'hoc-vien') : '',
+        ].filter(Boolean).join('-');
+        exportToExcel(rows, `hoa-don-hoc-phi${suffix ? '-' + suffix : ''}`);
+      }
+      toast(`Đã xuất ${filteredExportInvoices.length} hóa đơn (${expFormat.toUpperCase()})!`, 'success');
+      setIsExportOpen(false);
+    } catch (err) {
+      toast('Có lỗi khi xuất hóa đơn!', 'error');
+    }
+  };
+
+  const openGenerateModal = () => {
+    setGenMonth(new Date().getMonth() + 1);
+    setGenYear(new Date().getFullYear());
+    setIsGenerateOpen(true);
+  };
+
+  const handleGenerateMonthly = async () => {
+    setIsGenerating(true);
+    try {
+      const res = await billingService.generateMonthlyInvoices(genMonth, genYear);
+      let msg = `Tháng ${genMonth}/${genYear}: `;
+      if (res.created > 0) msg += `đã tạo ${res.created} hóa đơn. `;
+      if (res.noAttendance > 0) msg += `${res.noAttendance} học viên chưa có buổi học. `;
+      if (res.skipped > 0) msg += `${res.skipped} học viên bỏ qua (đã có HĐ hoặc chưa có học phí).`;
+      if (res.created === 0 && res.noAttendance === 0 && res.skipped === 0) msg += 'không có học viên nào.';
+      toast(msg.trim(), res.created > 0 ? 'success' : 'info');
+      setIsGenerateOpen(false);
+    } catch (err) {
+      toast('Có lỗi khi tạo hóa đơn!', 'error');
+    } finally {
+      await fetchData();
+      setIsGenerating(false);
+    }
+  };
+
   return (
     <div className="space-y-10 pb-10">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-hairline pb-8">
@@ -149,29 +258,14 @@ export default function InvoiceList() {
         <div className="flex gap-3">
           <button 
             type="button"
-            onClick={() => {
-              if (invoices.length === 0) {
-                toast('Không có dữ liệu để xuất!', 'warning');
-                return;
-              }
-              const data = invoices.map(inv => {
-                const student = students.find(s => s.id === inv.studentId);
-                return {
-                  'Học sinh': student?.name || 'N/A',
-                  'Tháng': `Tháng ${inv.month}/${inv.year}`,
-                  'Số buổi': inv.sessionCount,
-                  'Số tiền': inv.totalAmount,
-                  'Trạng thái': inv.status === InvoiceStatus.PAID ? 'Đã đóng' : 'Chờ thu',
-                  'Ngày tạo': inv.createdAt
-                };
-              });
-              exportToExcel(data, 'danh-sach-hoa-don');
-              toast('Xuất Excel thành công!', 'success');
+            onClick={async () => {
+              await fetchData();
+              setIsExportOpen(true);
             }}
             className="px-6 py-3 rounded-xl transition-all border bg-card text-muted border-hairline hover:border-slate-800 shadow-sm flex items-center gap-2 text-[10px] font-black tracking-widest uppercase"
           >
             <Download size={14} />
-            Xuất Excel
+            Xuất hóa đơn
           </button>
           <button 
             type="button"
@@ -189,57 +283,11 @@ export default function InvoiceList() {
           </button>
           <button 
             type="button"
-            onClick={async () => {
-              setIsLoading(true);
-              const currentMonth = new Date().getMonth() + 1;
-              const currentYear = new Date().getFullYear();
-              let createdCount = 0;
-              let skippedCount = 0;
-              let noAttendCount = 0;
-
-              const activeStudents = students.filter(s => s.status === StudentStatus.ACTIVE);
-
-              for (const s of activeStudents) {
-                 const exists = invoices.some(inv => 
-                    inv.studentId === s.id && 
-                    inv.month === currentMonth && 
-                    inv.year === currentYear
-                 );
-
-                 if (exists) {
-                   skippedCount++;
-                   continue;
-                 }
-
-                 const fee = classFeeMap[s.classId];
-                 if (!fee) {
-                   skippedCount++;
-                   continue;
-                 }
-
-                 try {
-                   const result = await billingService.generateInvoice(s.id, currentMonth, currentYear, fee);
-                   if (result) {
-                     createdCount++;
-                   } else {
-                     noAttendCount++;
-                   }
-                 } catch(e) { console.error(e); }
-              }
-
-              let msg = '';
-              if (createdCount > 0) msg += `Đã tạo ${createdCount} hóa đơn. `;
-              if (noAttendCount > 0) msg += `${noAttendCount} học viên chưa có buổi học. `;
-              if (skippedCount > 0) msg += `${skippedCount} học viên đã có hóa đơn.`;
-              if (msg) toast(msg.trim(), createdCount > 0 ? 'success' : 'info');
-
-              fetchData();
-              setIsLoading(false);
-            }}
+            onClick={openGenerateModal}
             className="bg-coral text-white px-6 py-3 rounded-xl text-[10px] font-black tracking-widest uppercase flex items-center gap-2 shadow-lg shadow-coral/20 hover:bg-coral-active transition-all active:scale-95"
           >
             <ArrowRight size={14} />
-            Tạo hóa đơn tháng
+            Tạo hóa đơn
           </button>
         </div>
       </div>
@@ -484,6 +532,208 @@ export default function InvoiceList() {
             </div>
           </div>
         )}
+      </Modal>
+
+      {/* Generate Invoice Modal */}
+      <Modal
+        isOpen={isGenerateOpen}
+        onClose={() => { if (!isGenerating) setIsGenerateOpen(false); }}
+        title="Tạo hóa đơn theo kỳ"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-muted leading-relaxed">
+            Chọn kỳ cần tạo. Hệ thống đếm số buổi <b className="text-ink">có mặt</b> của từng học viên
+            đang học trong kỳ rồi tạo hóa đơn <b className="text-ink">chưa thu</b>.
+            Kỳ đã có hóa đơn sẽ <b className="text-ink">không bị tạo trùng</b>.
+          </p>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-xs font-bold text-muted mb-1 block uppercase">Tháng</label>
+              <select
+                value={genMonth}
+                onChange={(e) => setGenMonth(Number(e.target.value))}
+                disabled={isGenerating}
+                className="w-full p-3 rounded-xl border border-hairline focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all font-semibold disabled:opacity-60"
+              >
+                {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
+                  <option key={m} value={m}>Tháng {m}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-xs font-bold text-muted mb-1 block uppercase">Năm</label>
+              <select
+                value={genYear}
+                onChange={(e) => setGenYear(Number(e.target.value))}
+                disabled={isGenerating}
+                className="w-full p-3 rounded-xl border border-hairline focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all font-semibold disabled:opacity-60"
+              >
+                {yearOptions.map(y => (
+                  <option key={y} value={y}>{y}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="bg-accent-light p-4 rounded-xl border border-hairline flex items-center justify-between">
+            <div>
+              <p className="text-[10px] font-bold text-muted uppercase mb-0.5">Kỳ tạo hóa đơn</p>
+              <p className="text-sm font-bold text-ink">Tháng {genMonth}/{genYear}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-[10px] font-bold text-muted uppercase mb-0.5">Học viên đang học</p>
+              <p className="text-base font-black text-coral">
+                {students.filter(s => s.status === StudentStatus.ACTIVE).length}
+              </p>
+            </div>
+          </div>
+
+          <div className="pt-2 flex gap-3">
+            <button
+              type="button"
+              onClick={() => setIsGenerateOpen(false)}
+              disabled={isGenerating}
+              className="flex-1 py-3 text-muted font-bold hover:bg-accent-light rounded-xl transition-all border border-hairline disabled:opacity-60"
+            >
+              Hủy
+            </button>
+            <button
+              type="button"
+              onClick={handleGenerateMonthly}
+              disabled={isGenerating}
+              className="flex-1 py-3 bg-coral text-white font-bold rounded-xl shadow-lg hover:shadow-coral/20 transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {isGenerating ? (
+                <>
+                  <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                  Đang tạo...
+                </>
+              ) : (
+                <>
+                  <ArrowRight size={16} />
+                  Tạo hóa đơn
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Export Modal */}
+      <Modal
+        isOpen={isExportOpen}
+        onClose={() => setIsExportOpen(false)}
+        title="Xuất hóa đơn tùy chỉnh"
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="text-xs font-bold text-muted mb-1 block uppercase">Kỳ (tháng / năm)</label>
+            <select
+              value={expMonth === 'all' ? 'all' : `${expYear}-${expMonth}`}
+              onChange={(e) => {
+                if (e.target.value === 'all') { setExpMonth('all'); return; }
+                const [y, m] = e.target.value.split('-').map(Number);
+                setExpYear(y);
+                setExpMonth(m);
+              }}
+              className="w-full p-3 rounded-xl border border-hairline focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all font-semibold"
+            >
+              <option value="all">Tất cả các kỳ</option>
+              {availablePeriods.map(p => (
+                <option key={`${p.year}-${p.month}`} value={`${p.year}-${p.month}`}>
+                  Tháng {p.month}/{p.year}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="text-xs font-bold text-muted mb-1 block uppercase">Học viên</label>
+            <select
+              value={expStudent}
+              onChange={(e) => setExpStudent(e.target.value)}
+              className="w-full p-3 rounded-xl border border-hairline focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all font-semibold"
+            >
+              <option value="all">Tất cả học viên</option>
+              {[...students].sort((a, b) => a.name.localeCompare(b.name)).map(s => (
+                <option key={s.id} value={s.id}>{s.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-xs font-bold text-muted mb-1 block uppercase">Trạng thái</label>
+              <select
+                value={expStatus}
+                onChange={(e) => setExpStatus(e.target.value as 'all' | InvoiceStatus)}
+                className="w-full p-3 rounded-xl border border-hairline focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all font-semibold"
+              >
+                <option value="all">Tất cả</option>
+                <option value={InvoiceStatus.PENDING}>Chờ thu</option>
+                <option value={InvoiceStatus.PAID}>Đã đóng</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-xs font-bold text-muted mb-1 block uppercase">Định dạng</label>
+              <div className="flex gap-2">
+                {(['pdf', 'excel'] as const).map(f => (
+                  <button
+                    key={f}
+                    type="button"
+                    onClick={() => setExpFormat(f)}
+                    className={cn(
+                      "flex-1 p-3 rounded-xl border text-[11px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-1.5",
+                      expFormat === f
+                        ? "bg-coral text-white border-coral shadow-lg"
+                        : "bg-card text-muted border-hairline hover:border-ink"
+                    )}
+                  >
+                    {f === 'pdf' ? <FileText size={14} /> : <Download size={14} />}
+                    {f === 'pdf' ? 'PDF' : 'Excel'}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-accent-light p-4 rounded-xl border border-hairline flex items-center justify-between">
+            <div>
+              <p className="text-[10px] font-bold text-muted uppercase mb-0.5">Khối lượng xuất</p>
+              <p className="text-sm font-bold text-ink">
+                {filteredExportInvoices.length} hóa đơn
+                {expFormat === 'pdf' && filteredExportInvoices.length === 1 && ' (phiếu thu chi tiết)'}
+              </p>
+              <p className="text-[11px] text-muted mt-0.5 italic">{exportDescription}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-[10px] font-bold text-muted uppercase mb-0.5">Tổng cộng</p>
+              <p className="text-base font-black text-coral">
+                {formatCurrency(filteredExportInvoices.reduce((acc, i) => acc + i.totalAmount, 0))}
+              </p>
+            </div>
+          </div>
+
+          <div className="pt-2 flex gap-3">
+            <button
+              type="button"
+              onClick={() => setIsExportOpen(false)}
+              className="flex-1 py-3 text-muted font-bold hover:bg-accent-light rounded-xl transition-all border border-hairline"
+            >
+              Hủy
+            </button>
+            <button
+              type="button"
+              onClick={handleExport}
+              disabled={filteredExportInvoices.length === 0}
+              className="flex-1 py-3 bg-coral text-white font-bold rounded-xl shadow-lg hover:shadow-coral/20 transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Download size={16} />
+              Xuất ngay
+            </button>
+          </div>
+        </div>
       </Modal>
 
       {/* Edit Modal */}

@@ -91,6 +91,19 @@ export async function initDb() {
       created_at TEXT
     )
   `);
+  try {
+    await db.execute(`
+      DELETE FROM invoices WHERE rowid NOT IN (
+        SELECT MIN(rowid) FROM invoices GROUP BY owner_id, student_id, month, year
+      )
+    `);
+    await db.execute(`
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_invoices_unique
+      ON invoices(owner_id, student_id, month, year)
+    `);
+  } catch (e) {
+    console.warn('Could not enforce invoices uniqueness index:', (e as Error).message);
+  }
   await db.execute(`
     CREATE TABLE IF NOT EXISTS notifications (
       id TEXT PRIMARY KEY,
@@ -139,4 +152,11 @@ export async function query(text: string, params?: any[]) {
 export async function execute(text: string, params?: any[]) {
   const result = await db.execute({ sql: text, args: sanitize(params) });
   return result;
+}
+
+export async function batch(stmts: { sql: string; args?: any[] }[]) {
+  return db.batch(
+    stmts.map(s => ({ sql: s.sql, args: sanitize(s.args) })),
+    'write'
+  );
 }
