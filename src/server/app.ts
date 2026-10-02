@@ -1,13 +1,17 @@
 import "express-async-errors";
 import express from "express";
 import cors from "cors";
+import compression from "compression";
 import routes from "./routes.js";
 import { initDb } from "./db.js";
+import { rateLimit } from "./rateLimit.js";
 
 const app = express();
 
 app.use(cors({ origin: process.env.CORS_ORIGIN || '*', credentials: true }));
-app.use(express.json({ limit: '100kb' }));
+app.use(compression());
+app.use(express.json({ limit: '200kb' }));
+app.use('/api', rateLimit(300, 60_000));
 app.use(routes);
 
 app.get("/api/health", (req, res) => {

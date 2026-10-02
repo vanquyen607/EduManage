@@ -62,6 +62,7 @@ export const api = {
     return request<any[]>(`/api/attendance${qs}`);
   },
   markAttendance: (data: any) => request<any>('/api/attendance', { method: 'POST', body: JSON.stringify(data) }),
+  markAttendanceBulk: (data: any) => request<any>('/api/attendance/bulk', { method: 'POST', body: JSON.stringify(data) }),
 
   // Invoices
   getInvoices: () => request<any[]>('/api/invoices'),

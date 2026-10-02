@@ -79,19 +79,18 @@ export default function AttendanceManager() {
     try {
       const dateObj = new Date(selectedDate);
       const classStudents = students.filter(s => s.classId === selectedClass);
-      
-      await Promise.all(classStudents.map(student => {
-        const status = attendanceData[student.id] || AttendanceStatus.PRESENT;
-        return api.markAttendance({
+
+      await api.markAttendanceBulk({
+        classId: selectedClass,
+        date: selectedDate,
+        month: dateObj.getMonth() + 1,
+        year: dateObj.getFullYear(),
+        items: classStudents.map(student => ({
           studentId: student.id,
-          classId: selectedClass,
-          date: selectedDate,
-          status,
-          month: dateObj.getMonth() + 1,
-          year: dateObj.getFullYear()
-        });
-      }));
-      
+          status: attendanceData[student.id] || AttendanceStatus.PRESENT,
+        })),
+      });
+
       toast('Đã lưu điểm danh thành công!', 'success');
     } catch (err) {
       toast('Có lỗi khi lưu điểm danh!', 'error');

@@ -1,20 +1,21 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Navbar from './components/layout/Navbar';
-import DashboardOverview from './components/dashboard/DashboardOverview';
-import StudentList from './components/students/StudentList';
-import ClassList from './components/classes/ClassList';
-import AttendanceManager from './components/attendance/AttendanceManager';
-import InvoiceList from './components/billing/InvoiceList';
 import Auth from './components/auth/Auth';
-import GradeManager from './components/grades/GradeManager';
-import ScheduleManager from './components/schedule/ScheduleManager';
-import SettingsView from './components/settings/SettingsView';
 import { motion, AnimatePresence } from 'motion/react';
 import { Menu } from 'lucide-react';
 import { cn } from './lib/utils';
 import { useTheme, themeConfig } from './lib/themeContext';
 import type { Theme } from './lib/themeContext';
 import { useAuth, logout, initAuth } from './lib/authStore';
+
+const DashboardOverview = React.lazy(() => import('./components/dashboard/DashboardOverview'));
+const StudentList = React.lazy(() => import('./components/students/StudentList'));
+const ClassList = React.lazy(() => import('./components/classes/ClassList'));
+const AttendanceManager = React.lazy(() => import('./components/attendance/AttendanceManager'));
+const InvoiceList = React.lazy(() => import('./components/billing/InvoiceList'));
+const GradeManager = React.lazy(() => import('./components/grades/GradeManager'));
+const ScheduleManager = React.lazy(() => import('./components/schedule/ScheduleManager'));
+const SettingsView = React.lazy(() => import('./components/settings/SettingsView'));
 
 export default function App() {
   const { theme, setTheme } = useTheme();
@@ -131,7 +132,15 @@ export default function App() {
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.25, ease: "easeOut" }}
           >
-            {renderContent()}
+            <Suspense
+              fallback={
+                <div className="py-24 text-center text-muted text-[11px] font-black uppercase tracking-widest">
+                  Đang tải...
+                </div>
+              }
+            >
+              {renderContent()}
+            </Suspense>
           </motion.div>
         </AnimatePresence>
       </main>

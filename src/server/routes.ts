@@ -27,6 +27,13 @@ function requireAuth(handler: (req: any, res: Response) => Promise<void>) {
 
 function uuid() { return crypto.randomUUID(); }
 
+function parsePagination(q: any): { page: number; limit: number } | null {
+  const page = parseInt(String(q.page || ''));
+  const limit = parseInt(String(q.limit || ''));
+  if (page > 0 && limit > 0 && limit <= 500) return { page, limit };
+  return null;
+}
+
 // ─── AUTH ────────────────────────────────────────────
 router.post('/api/auth/register', async (req: Request, res: Response) => {
   const v = validate(z.object({ email: emailSchema, password: passwordSchema, displayName: z.string().min(2).max(100).optional() }), req.body);
@@ -204,6 +211,17 @@ router.delete('/api/classes/:id', authMiddleware, async (req: any, res: Response
 
 // ─── GRADES ──────────────────────────────────────────
 router.get('/api/grades', authMiddleware, async (req: any, res: Response) => {
+  const p = parsePagination(req.query);
+  if (p) {
+    const total = await query('SELECT COUNT(*) AS c FROM grades WHERE owner_id=?', [req.user.id]);
+    const result = await query(
+      'SELECT * FROM grades WHERE owner_id=? ORDER BY date DESC LIMIT ? OFFSET ?',
+      [req.user.id, p.limit, (p.page - 1) * p.limit]
+    );
+    res.setHeader('X-Total-Count', String(total.rows[0].c));
+    res.json(result.rows);
+    return;
+  }
   const result = await query('SELECT * FROM grades WHERE owner_id = ? ORDER BY date DESC', [req.user.id]);
   res.json(result.rows);
 });
@@ -284,6 +302,43 @@ router.post('/api/attendance', authMiddleware, async (req: any, res: Response) =
   }
 });
 
+router.post('/api/attendance/bulk', authMiddleware, async (req: any, res: Response) => {
+  const v = validate(z.object({
+    classId: z.string().min(1), date: z.string().min(1),
+    month: z.number().min(1).max(12), year: z.number().min(2020).max(2100),
+    items: z.array(z.object({
+      studentId: z.string().min(1), status: z.string().min(1),
+    })).min(1).max(500),
+  }), req.body);
+  if (!v.ok) return res.status(400).json({ error: v.error });
+  const { classId, date, month, year, items } = v.data;
+
+  const existing = await query(
+    'SELECT id, student_id FROM attendance WHERE owner_id=? AND date=?',
+    [req.user.id, date]
+  );
+  const existingMap = new Map<string, string>(
+    existing.rows.map((r: any) => [r.student_id, r.id])
+  );
+
+  const stmts: { sql: string; args: any[] }[] = items.map(it => {
+    const existingId = existingMap.get(it.studentId);
+    if (existingId) {
+      return {
+        sql: 'UPDATE attendance SET status=?, class_id=?, month=?, year=? WHERE id=? AND owner_id=?',
+        args: [it.status, classId, month, year, existingId, req.user.id],
+      };
+    }
+    return {
+      sql: 'INSERT INTO attendance (id, owner_id, student_id, class_id, date, status, month, year) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      args: [uuid(), req.user.id, it.studentId, classId, date, it.status, month, year],
+    };
+  });
+
+  await batch(stmts);
+  res.json({ success: true, count: items.length });
+});
+
 router.delete('/api/attendance/:id', authMiddleware, async (req: any, res: Response) => {
   await query('DELETE FROM attendance WHERE id=? AND owner_id=?', [req.params.id, req.user.id]);
   res.json({ success: true });
@@ -291,6 +346,17 @@ router.delete('/api/attendance/:id', authMiddleware, async (req: any, res: Respo
 
 // ─── INVOICES ────────────────────────────────────────
 router.get('/api/invoices', authMiddleware, async (req: any, res: Response) => {
+  const p = parsePagination(req.query);
+  if (p) {
+    const total = await query('SELECT COUNT(*) AS c FROM invoices WHERE owner_id=?', [req.user.id]);
+    const result = await query(
+      'SELECT * FROM invoices WHERE owner_id=? ORDER BY created_at DESC LIMIT ? OFFSET ?',
+      [req.user.id, p.limit, (p.page - 1) * p.limit]
+    );
+    res.setHeader('X-Total-Count', String(total.rows[0].c));
+    res.json(result.rows);
+    return;
+  }
   const result = await query('SELECT * FROM invoices WHERE owner_id = ?', [req.user.id]);
   res.json(result.rows);
 });
@@ -347,6 +413,16 @@ router.post('/api/invoices/generate', authMiddleware, async (req: any, res: Resp
   );
   const existing = new Set(existingRes.rows.map((r: any) => r.student_id));
 
+  const attRes = await query(
+    `SELECT student_id, COUNT(*) AS cnt FROM attendance
+     WHERE owner_id=? AND month=? AND year=? AND status='present'
+     GROUP BY student_id`,
+    [req.user.id, month, year]
+  );
+  const presentMap = new Map<string, number>(
+    attRes.rows.map((r: any) => [r.student_id, Number(r.cnt) || 0])
+  );
+
   let skipped = 0;
   let noAttendance = 0;
   const stmts: { sql: string; args: any[] }[] = [];
@@ -357,12 +433,7 @@ router.post('/api/invoices/generate', authMiddleware, async (req: any, res: Resp
     const fee = Number(s.fee_per_session || 0);
     if (!fee) { skipped++; continue; }
 
-    const att = await query(
-      `SELECT COUNT(*) AS cnt FROM attendance
-       WHERE owner_id=? AND student_id=? AND month=? AND year=? AND status='present'`,
-      [req.user.id, s.id, month, year]
-    );
-    const present = Number(att.rows[0].cnt) || 0;
+    const present = presentMap.get(s.id) || 0;
     if (present === 0) { noAttendance++; continue; }
 
     stmts.push({
@@ -533,9 +604,7 @@ router.put('/api/settings', authMiddleware, async (req: any, res: Response) => {
 // ─── DEMO / UTILITY ──────────────────────────────────
 router.post('/api/demo/clear', authMiddleware, async (req: any, res: Response) => {
   const tables = ['invoices', 'attendance', 'grades', 'comments', 'notifications', 'students', 'classes'];
-  for (const t of tables) {
-    await query(`DELETE FROM ${t} WHERE owner_id = ?`, [req.user.id]);
-  }
+  await batch(tables.map(t => ({ sql: `DELETE FROM ${t} WHERE owner_id = ?`, args: [req.user.id] })));
   res.json({ success: true });
 });
 
@@ -553,12 +622,8 @@ router.post('/api/demo/seed', authMiddleware, async (req: any, res: Response) =>
       desc: 'Tiếng Anh giao tiếp công việc',
       sched: [{ dayOfWeek: 5, startTime: '19:00', endTime: '21:00' }] },
   ];
-  for (const c of classData) {
-    const id = uuid();
-    await query('INSERT INTO classes (id, owner_id, name, color, teacher, fee_per_session, description, schedule) VALUES (?,?,?,?,?,?,?,?)',
-      [id, uid, c.name, c.color, c.teacher, c.fee, c.desc, JSON.stringify(c.sched)]);
-    classIds.push(id);
-  }
+  const stmts: { sql: string; args: any[] }[] = [];
+  for (let i = 0; i < classData.length; i++) classIds.push(uuid());
 
   const studentData = [
     { name: 'Nguyễn Văn A', parentName: 'Nguyễn Văn B', parentPhone: '0901234567' },
@@ -566,32 +631,40 @@ router.post('/api/demo/seed', authMiddleware, async (req: any, res: Response) =>
     { name: 'Lê Văn E', parentName: 'Lê Thị F', parentPhone: '0903456789' },
     { name: 'Phạm Minh G', parentName: 'Phạm Văn H', parentPhone: '0904567890' },
   ];
-  const studentIds: string[] = [];
+  const studentIds: string[] = studentData.map(() => uuid());
+
+  const subjects = ['Listening', 'Reading', 'Writing', 'Speaking'];
+  for (let i = 0; i < classData.length; i++) {
+    const c = classData[i];
+    const id = classIds[i];
+    stmts.push({
+      sql: 'INSERT INTO classes (id, owner_id, name, color, teacher, fee_per_session, description, schedule) VALUES (?,?,?,?,?,?,?,?)',
+      args: [id, uid, c.name, c.color, c.teacher, c.fee, c.desc, JSON.stringify(c.sched)],
+    });
+  }
   for (let i = 0; i < studentData.length; i++) {
     const s = studentData[i];
     const ci = i < 2 ? classIds[0] : i === 2 ? classIds[1] : classIds[2];
-    const sid = uuid();
-    await query(
-      'INSERT INTO students (id, owner_id, name, class_id, parent_name, parent_phone, status, created_at) VALUES (?,?,?,?,?,?,?,?)',
-      [sid, uid, s.name, ci, s.parentName, s.parentPhone, 'active', new Date().toISOString()]
-    );
-    studentIds.push(sid);
+    stmts.push({
+      sql: 'INSERT INTO students (id, owner_id, name, class_id, parent_name, parent_phone, status, created_at) VALUES (?,?,?,?,?,?,?,?)',
+      args: [studentIds[i], uid, s.name, ci, s.parentName, s.parentPhone, 'active', new Date().toISOString()],
+    });
   }
-
-  const subjects = ['Listening', 'Reading', 'Writing', 'Speaking'];
   for (let i = 0; i < studentIds.length; i++) {
     const ci = i < 2 ? classIds[0] : i === 2 ? classIds[1] : classIds[2];
     for (const subject of subjects) {
-      const gid = uuid();
-      await query('INSERT INTO grades (id, owner_id, student_id, class_id, subject, score, weight, date) VALUES (?,?,?,?,?,?,?,?)',
-        [gid, uid, studentIds[i], ci, subject, Math.floor(Math.random() * 5) + 5, 1, new Date().toISOString().split('T')[0]]);
+      stmts.push({
+        sql: 'INSERT INTO grades (id, owner_id, student_id, class_id, subject, score, weight, date) VALUES (?,?,?,?,?,?,?,?)',
+        args: [uuid(), uid, studentIds[i], ci, subject, Math.floor(Math.random() * 5) + 5, 1, new Date().toISOString().split('T')[0]],
+      });
     }
   }
+  stmts.push({
+    sql: 'INSERT INTO notifications (id, owner_id, title, time_label, status, type, created_at) VALUES (?,?,?,?,?,?,?)',
+    args: [uuid(), uid, 'Chào mừng bạn đến với English Center', 'Vừa xong', 'done', 'check', new Date().toISOString()],
+  });
 
-  const nid = uuid();
-  await query('INSERT INTO notifications (id, owner_id, title, time_label, status, type, created_at) VALUES (?,?,?,?,?,?,?)',
-    [nid, uid, 'Chào mừng bạn đến với English Center', 'Vừa xong', 'done', 'check', new Date().toISOString()]);
-
+  await batch(stmts);
   res.json({ success: true });
 });
 
